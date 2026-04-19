@@ -58,10 +58,7 @@
       z-index: 9999;
     }
 
-    button,
-    input,
-    select,
-    textarea {
+    button, input, select, textarea {
       font: inherit;
     }
 
@@ -152,15 +149,15 @@
       color: var(--accent);
     }
 
-    .settings-btn:active,
-    .settings-btn:hover {
+    .settings-btn:hover,
+    .settings-btn:active {
       background: rgba(0, 217, 255, 0.06);
       border-color: var(--accent);
     }
 
     .main {
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 390px 1fr;
       min-height: calc(100vh - 102px);
     }
 
@@ -197,15 +194,12 @@
       letter-spacing: 1px;
     }
 
-    input,
-    select,
-    textarea {
+    input, select, textarea {
       width: 100%;
       background: rgba(255,255,255,0.02);
       color: var(--text);
       border: 1px solid var(--border);
       padding: 14px 16px;
-      border-radius: 0;
       outline: none;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 13px;
@@ -216,9 +210,7 @@
       min-height: 100px;
     }
 
-    input:focus,
-    select:focus,
-    textarea:focus {
+    input:focus, select:focus, textarea:focus {
       border-color: var(--accent);
       box-shadow: var(--shadow);
     }
@@ -240,7 +232,6 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      -webkit-tap-highlight-color: transparent;
     }
 
     .persona-card:hover {
@@ -281,6 +272,26 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
+    }
+
+    .check-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .check-row input {
+      width: auto;
+      padding: 0;
+      box-shadow: none;
     }
 
     .primary-btn,
@@ -450,9 +461,7 @@
       background: rgba(15, 16, 24, 0.8);
     }
 
-    .toolbar-spacer {
-      flex: 1;
-    }
+    .toolbar-spacer { flex: 1; }
 
     .toolbar-meta {
       color: var(--muted);
@@ -616,7 +625,7 @@
     }
 
     .drawer {
-      width: min(440px, 92vw);
+      width: min(460px, 94vw);
       height: 100vh;
       background: var(--surface);
       border-left: 1px solid var(--border);
@@ -719,6 +728,10 @@
     .toast.err { border-color: var(--accent2); color: var(--accent2); }
     .toast.info { border-color: var(--accent); color: var(--accent); }
 
+    .hidden {
+      display: none !important;
+    }
+
     @media (max-width: 980px) {
       .main {
         grid-template-columns: 1fr;
@@ -784,10 +797,6 @@
       .summary-container {
         padding: 16px;
       }
-
-      .tabs {
-        padding-left: 6px;
-      }
     }
   </style>
 </head>
@@ -796,7 +805,7 @@
     <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
       <aside class="drawer" onclick="event.stopPropagation()">
         <div class="drawer-title">⚙ SETTINGS</div>
-        <div class="drawer-sub">GitHub + Fix Pipeline</div>
+        <div class="drawer-sub">GitHub + Auth + Device Testing</div>
 
         <div class="drawer-section">
           <div class="drawer-section-title">GitHub Repo</div>
@@ -828,46 +837,75 @@
 
           <button class="ghost-btn" onclick="testGitHub()">VERIFY GITHUB</button>
           <div id="ghStatus"></div>
-          <p class="drawer-hint" style="margin-top:10px;">
-            For production, move GitHub writes to a backend or GitHub App. This demo keeps the token in browser storage.
-          </p>
         </div>
 
         <div class="drawer-section">
-          <div class="drawer-section-title">App Credentials</div>
+          <div class="drawer-section-title">Authentication</div>
 
           <div class="drawer-field">
-            <label for="credUrl">App URL</label>
-            <input id="credUrl" type="text" placeholder="https://your-app.com" oninput="saveSettings()" />
+            <label for="authType">Auth Type</label>
+            <select id="authType" oninput="saveSettings(); updateAuthFields();">
+              <option value="none">No Login</option>
+              <option value="credentials">Email / Password</option>
+              <option value="google">Google OAuth</option>
+              <option value="magic">Magic Link</option>
+              <option value="sso">Custom SSO</option>
+            </select>
           </div>
 
           <div class="drawer-field">
-            <label for="credUsername">Username / Email</label>
-            <input id="credUsername" type="text" placeholder="user@example.com" oninput="saveSettings()" />
+            <label for="authAppUrl">App URL</label>
+            <input id="authAppUrl" type="text" placeholder="https://your-app.com" oninput="saveSettings()" />
           </div>
 
           <div class="drawer-field">
-            <label for="credPassword">Password</label>
-            <input id="credPassword" type="password" placeholder="••••••••" oninput="saveSettings()" />
+            <label for="authStartRoute">Start Route After Login</label>
+            <input id="authStartRoute" type="text" placeholder="/dashboard" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field auth-shared auth-basic auth-google auth-sso">
+            <label for="authEmail">Test Email</label>
+            <input id="authEmail" type="text" placeholder="tester@example.com" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field auth-basic auth-google">
+            <label for="authPassword">Test Password</label>
+            <input id="authPassword" type="password" placeholder="••••••••" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field auth-google hidden">
+            <label for="authGoogleMode">Google Login Flow</label>
+            <select id="authGoogleMode" oninput="saveSettings()">
+              <option value="popup">Popup</option>
+              <option value="redirect">Redirect</option>
+            </select>
+          </div>
+
+          <div class="drawer-field auth-google hidden">
+            <label for="authGoogle2FA">2FA / Consent Notes</label>
+            <textarea id="authGoogle2FA" rows="2" placeholder="Consent screen, device prompt, test-only bypass, etc." oninput="saveSettings()"></textarea>
           </div>
 
           <div class="drawer-field">
-            <label for="credNotes">Additional Auth Notes</label>
-            <textarea id="credNotes" rows="3" placeholder="2FA code, SSO flow, seed data..." oninput="saveSettings()"></textarea>
+            <label for="authSuccessSignal">Post-login Success Signal</label>
+            <input id="authSuccessSignal" type="text" placeholder="/dashboard or [data-testid='sidebar']" oninput="saveSettings()" />
           </div>
+
+          <div class="drawer-field">
+            <label for="authNotes">Auth Notes</label>
+            <textarea id="authNotes" rows="3" placeholder="Tenant chooser, org selection, special redirect rules..." oninput="saveSettings()"></textarea>
+          </div>
+
+          <p class="drawer-hint">Use staging or test accounts only.</p>
         </div>
 
         <div class="drawer-section">
           <div class="drawer-section-title">Source File</div>
 
           <div class="drawer-field">
-            <label for="sourceCode">Paste source HTML/JS/CSS</label>
-            <textarea id="sourceCode" rows="8" placeholder="Paste your file here for Generate Fix / Auto-Fix PR..." oninput="saveSettings()"></textarea>
+            <label for="sourceCode">Paste source HTML / JS / CSS</label>
+            <textarea id="sourceCode" rows="8" placeholder="Paste your source here for Generate Fix / Auto-Fix PR..." oninput="saveSettings()"></textarea>
           </div>
-
-          <p class="drawer-hint">
-            The fix pipeline will use this source, your findings, and your selected target file path.
-          </p>
         </div>
 
         <div class="drawer-section">
@@ -879,7 +917,7 @@
     <header class="header">
       <div class="brand">
         <div class="logo">PHAN<span>T</span>OM</div>
-        <div class="sublogo">Agentic Beta Testing<br />System v3.0</div>
+        <div class="sublogo">Agentic Beta Testing<br />System v3.1</div>
       </div>
 
       <div class="header-actions">
@@ -903,7 +941,7 @@
         <div class="panel-section">
           <div class="panel-label">Expert Persona</div>
 
-          <div class="persona-grid" id="personaGrid">
+          <div class="persona-grid">
             <div class="persona-card active" data-persona="cto">
               <div class="emoji">⚙️</div>
               <div class="title">CTO / Tech Lead</div>
@@ -966,6 +1004,8 @@
                   <option value="bugs">Bug Detection</option>
                   <option value="perf">Performance</option>
                   <option value="a11y">Accessibility</option>
+                  <option value="auth">Authentication</option>
+                  <option value="responsive">Responsive / Mobile</option>
                 </select>
               </div>
 
@@ -977,6 +1017,78 @@
                   <option value="power">Power User</option>
                 </select>
               </div>
+            </div>
+
+            <div class="panel-label" style="margin-top:8px; margin-bottom:0;">Device Testing</div>
+
+            <div>
+              <div class="field-label">Device Mode</div>
+              <select id="deviceMode" oninput="saveSettings(); updateDeviceFields();">
+                <option value="desktop" selected>Desktop</option>
+                <option value="mobile">Mobile</option>
+                <option value="tablet">Tablet</option>
+                <option value="all">All Devices</option>
+              </select>
+            </div>
+
+            <div class="config-row">
+              <div>
+                <div class="field-label">Mobile Preset</div>
+                <select id="mobilePreset" oninput="saveSettings(); updateDeviceFields();">
+                  <option value="iphone14">iPhone 14 / 15</option>
+                  <option value="iphoneSE">iPhone SE</option>
+                  <option value="pixel7">Pixel 7</option>
+                  <option value="galaxyS22">Galaxy S22</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="field-label">Orientation</div>
+                <select id="deviceOrientation" oninput="saveSettings()">
+                  <option value="portrait" selected>Portrait</option>
+                  <option value="landscape">Landscape</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="config-row device-custom hidden" id="deviceCustomRow">
+              <div>
+                <div class="field-label">Custom Width</div>
+                <input id="customWidth" type="number" placeholder="390" oninput="saveSettings()" />
+              </div>
+
+              <div>
+                <div class="field-label">Custom Height</div>
+                <input id="customHeight" type="number" placeholder="844" oninput="saveSettings()" />
+              </div>
+            </div>
+
+            <div class="check-grid">
+              <label class="check-row">
+                <input id="touchMode" type="checkbox" checked oninput="saveSettings()" />
+                <span>Enable touch simulation</span>
+              </label>
+
+              <label class="check-row">
+                <input id="slowNetwork" type="checkbox" oninput="saveSettings()" />
+                <span>Simulate slow network</span>
+              </label>
+
+              <label class="check-row">
+                <input id="reducedMotion" type="checkbox" oninput="saveSettings()" />
+                <span>Prefer reduced motion</span>
+              </label>
+
+              <label class="check-row">
+                <input id="testAuthFlows" type="checkbox" checked oninput="saveSettings()" />
+                <span>Test authentication flows</span>
+              </label>
+
+              <label class="check-row">
+                <input id="testMobileUX" type="checkbox" checked oninput="saveSettings()" />
+                <span>Prioritize mobile UX checks</span>
+              </label>
             </div>
           </div>
 
@@ -1037,36 +1149,12 @@
     let fixedSource = '';
 
     const personas = {
-      cto: {
-        name: 'CTO / Tech Lead',
-        style: 'analytical and precise',
-        expertise: 'system architecture, APIs, performance, reliability'
-      },
-      pm: {
-        name: 'Product Manager',
-        style: 'flow and edge-case focused',
-        expertise: 'user journeys, completeness, friction'
-      },
-      designer: {
-        name: 'UX Designer',
-        style: 'detail-obsessed and accessibility-aware',
-        expertise: 'usability, hierarchy, accessibility'
-      },
-      founder: {
-        name: 'Startup Founder',
-        style: 'high-signal and impatient',
-        expertise: 'time-to-value, friction, differentiation'
-      },
-      ops: {
-        name: 'Operations Lead',
-        style: 'systematic and workflow-oriented',
-        expertise: 'data, permissions, auditability'
-      },
-      custom: {
-        name: 'Custom Persona',
-        style: 'custom',
-        expertise: 'user-defined'
-      }
+      cto: { name: 'CTO / Tech Lead', style: 'analytical and precise', expertise: 'system architecture, APIs, performance, reliability' },
+      pm: { name: 'Product Manager', style: 'flow and edge-case focused', expertise: 'user journeys, completeness, friction' },
+      designer: { name: 'UX Designer', style: 'detail-obsessed and accessibility-aware', expertise: 'usability, hierarchy, accessibility' },
+      founder: { name: 'Startup Founder', style: 'high-signal and impatient', expertise: 'time-to-value, friction, differentiation' },
+      ops: { name: 'Operations Lead', style: 'systematic and workflow-oriented', expertise: 'data, permissions, auditability' },
+      custom: { name: 'Custom Persona', style: 'custom', expertise: 'user-defined' }
     };
 
     function qs(id) {
@@ -1074,43 +1162,62 @@
     }
 
     function saveSettings() {
-      const ids = [
-        'ghToken',
-        'ghOwner',
-        'ghRepo',
-        'ghBase',
-        'ghFilePath',
-        'credUrl',
-        'credUsername',
-        'credPassword',
-        'credNotes',
-        'sourceCode'
+      const valueIds = [
+        'ghToken', 'ghOwner', 'ghRepo', 'ghBase', 'ghFilePath',
+        'authType', 'authAppUrl', 'authStartRoute', 'authEmail', 'authPassword',
+        'authGoogleMode', 'authGoogle2FA', 'authSuccessSignal', 'authNotes',
+        'sourceCode',
+        'deviceMode', 'mobilePreset', 'deviceOrientation', 'customWidth', 'customHeight'
       ];
-      ids.forEach((id) => localStorage.setItem('phantom_' + id, qs(id).value));
+
+      const checkIds = ['touchMode', 'slowNetwork', 'reducedMotion', 'testAuthFlows', 'testMobileUX'];
+
+      valueIds.forEach((id) => {
+        const el = qs(id);
+        if (el) localStorage.setItem('phantom_' + id, el.value);
+      });
+
+      checkIds.forEach((id) => {
+        const el = qs(id);
+        if (el) localStorage.setItem('phantom_' + id, el.checked ? 'true' : 'false');
+      });
     }
 
     function loadSettings() {
       const defaults = {
         ghBase: 'main',
-        ghFilePath: 'index.html'
+        ghFilePath: 'index.html',
+        authType: 'none',
+        deviceMode: 'desktop',
+        mobilePreset: 'iphone14',
+        deviceOrientation: 'portrait'
       };
 
-      const ids = [
-        'ghToken',
-        'ghOwner',
-        'ghRepo',
-        'ghBase',
-        'ghFilePath',
-        'credUrl',
-        'credUsername',
-        'credPassword',
-        'credNotes',
-        'sourceCode'
+      const valueIds = [
+        'ghToken', 'ghOwner', 'ghRepo', 'ghBase', 'ghFilePath',
+        'authType', 'authAppUrl', 'authStartRoute', 'authEmail', 'authPassword',
+        'authGoogleMode', 'authGoogle2FA', 'authSuccessSignal', 'authNotes',
+        'sourceCode',
+        'deviceMode', 'mobilePreset', 'deviceOrientation', 'customWidth', 'customHeight'
       ];
 
-      ids.forEach((id) => {
-        qs(id).value = localStorage.getItem('phantom_' + id) || defaults[id] || '';
+      const checkIds = ['touchMode', 'slowNetwork', 'reducedMotion', 'testAuthFlows', 'testMobileUX'];
+
+      valueIds.forEach((id) => {
+        const el = qs(id);
+        if (!el) return;
+        el.value = localStorage.getItem('phantom_' + id) || defaults[id] || '';
       });
+
+      checkIds.forEach((id) => {
+        const el = qs(id);
+        if (!el) return;
+        const saved = localStorage.getItem('phantom_' + id);
+        el.checked = saved === null ? (id === 'touchMode' || id === 'testAuthFlows' || id === 'testMobileUX') : saved === 'true';
+      });
+
+      updateAuthFields();
+      updateDeviceFields();
     }
 
     function getGHConfig() {
@@ -1123,6 +1230,65 @@
       };
     }
 
+    function getAuthConfig() {
+      return {
+        type: localStorage.getItem('phantom_authType') || 'none',
+        appUrl: localStorage.getItem('phantom_authAppUrl') || '',
+        startRoute: localStorage.getItem('phantom_authStartRoute') || '',
+        email: localStorage.getItem('phantom_authEmail') || '',
+        password: localStorage.getItem('phantom_authPassword') || '',
+        googleMode: localStorage.getItem('phantom_authGoogleMode') || 'popup',
+        google2FA: localStorage.getItem('phantom_authGoogle2FA') || '',
+        successSignal: localStorage.getItem('phantom_authSuccessSignal') || '',
+        notes: localStorage.getItem('phantom_authNotes') || ''
+      };
+    }
+
+    function getDeviceConfig() {
+      return {
+        mode: localStorage.getItem('phantom_deviceMode') || 'desktop',
+        preset: localStorage.getItem('phantom_mobilePreset') || 'iphone14',
+        orientation: localStorage.getItem('phantom_deviceOrientation') || 'portrait',
+        customWidth: localStorage.getItem('phantom_customWidth') || '',
+        customHeight: localStorage.getItem('phantom_customHeight') || '',
+        touchMode: localStorage.getItem('phantom_touchMode') !== 'false',
+        slowNetwork: localStorage.getItem('phantom_slowNetwork') === 'true',
+        reducedMotion: localStorage.getItem('phantom_reducedMotion') === 'true',
+        testAuthFlows: localStorage.getItem('phantom_testAuthFlows') !== 'false',
+        testMobileUX: localStorage.getItem('phantom_testMobileUX') !== 'false'
+      };
+    }
+
+    function updateAuthFields() {
+      const type = qs('authType').value;
+      document.querySelectorAll('.auth-basic, .auth-google, .auth-sso, .auth-shared').forEach((el) => {
+        el.classList.add('hidden');
+      });
+
+      if (type === 'credentials') {
+        document.querySelectorAll('.auth-basic, .auth-shared').forEach((el) => el.classList.remove('hidden'));
+      }
+
+      if (type === 'google') {
+        document.querySelectorAll('.auth-google, .auth-shared').forEach((el) => el.classList.remove('hidden'));
+      }
+
+      if (type === 'sso') {
+        document.querySelectorAll('.auth-sso, .auth-shared').forEach((el) => el.classList.remove('hidden'));
+      }
+
+      if (type === 'magic') {
+        document.querySelectorAll('.auth-shared').forEach((el) => el.classList.remove('hidden'));
+      }
+    }
+
+    function updateDeviceFields() {
+      const mode = qs('deviceMode').value;
+      const preset = qs('mobilePreset').value;
+      const showCustom = (mode === 'mobile' || mode === 'all') && preset === 'custom';
+      qs('deviceCustomRow').classList.toggle('hidden', !showCustom);
+    }
+
     function toggleDrawer() {
       loadSettings();
       const overlay = qs('drawerOverlay');
@@ -1131,15 +1297,11 @@
     }
 
     function closeDrawer(e) {
-      if (e.target === qs('drawerOverlay')) {
-        toggleDrawer();
-      }
+      if (e.target === qs('drawerOverlay')) toggleDrawer();
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && qs('drawerOverlay').classList.contains('open')) {
-        toggleDrawer();
-      }
+      if (e.key === 'Escape' && qs('drawerOverlay').classList.contains('open')) toggleDrawer();
     });
 
     function now() {
@@ -1230,6 +1392,7 @@
           <div>AREA: ${finding.area}</div>
           <div>IMPACT: ${finding.impact}</div>
           ${finding.recommendation ? `<div>FIX: ${finding.recommendation}</div>` : ''}
+          ${finding.device ? `<div>DEVICE: ${finding.device}</div>` : ''}
         </div>
       `;
       container.appendChild(card);
@@ -1265,27 +1428,26 @@
             <div style="line-height:1.8; color:#ced6f2;">${result.verdict}</div>
           </div>
 
-          ${
-            result.topStrengths?.length
-              ? `
+          ${result.topStrengths?.length ? `
             <div class="summary-box" style="border-color:rgba(168,255,62,0.35);">
               <div class="panel-label" style="margin-bottom:10px; color:var(--accent3);">Top Strengths</div>
               ${result.topStrengths.map((s) => `<div style="margin-bottom:8px; color:#c8f2b0;">✓ ${s}</div>`).join('')}
             </div>
-          `
-              : ''
-          }
+          ` : ''}
 
-          ${
-            result.criticalIssues?.length
-              ? `
+          ${result.criticalIssues?.length ? `
             <div class="summary-box" style="border-color:rgba(255,61,113,0.35);">
               <div class="panel-label" style="margin-bottom:10px; color:var(--accent2);">Priority Fixes</div>
               ${result.criticalIssues.map((s) => `<div style="margin-bottom:8px; color:#ffb0c4;">⚠ ${s}</div>`).join('')}
             </div>
-          `
-              : ''
-          }
+          ` : ''}
+
+          ${result.deviceNotes?.length ? `
+            <div class="summary-box">
+              <div class="panel-label" style="margin-bottom:10px;">Device Notes</div>
+              ${result.deviceNotes.map((s) => `<div style="margin-bottom:8px; color:#ced6f2;">• ${s}</div>`).join('')}
+            </div>
+          ` : ''}
         </div>
       `;
     }
@@ -1316,6 +1478,7 @@
           `### ${i + 1}. [${f.severity}] ${f.title}`,
           `- Area: ${f.area}`,
           `- Impact: ${f.impact}`,
+          ...(f.device ? [`- Device: ${f.device}`] : []),
           ``,
           `${f.description}`,
           ``,
@@ -1340,11 +1503,8 @@
       const focus = qs('focusArea').value;
       const skill = qs('skillLevel').value;
 
-      const credUrl = localStorage.getItem('phantom_credUrl') || '';
-      const credUsername = localStorage.getItem('phantom_credUsername') || '';
-      const credPassword = localStorage.getItem('phantom_credPassword') || '';
-      const credNotes = localStorage.getItem('phantom_credNotes') || '';
-      const hasCredentials = !!(credUsername || credPassword);
+      const auth = getAuthConfig();
+      const device = getDeviceConfig();
 
       isRunning = true;
       findings = [];
@@ -1367,23 +1527,57 @@
       addLog('agent', `Initializing ${persona.name} agent...`);
       addLog('info', `Target: ${appName}`);
       addLog('info', `Focus: ${focus} | Depth: ${depth} | Skill: ${skill}`);
+      addLog('nav', `Device mode: ${device.mode} / preset: ${device.preset}`);
 
-      await sleep(300);
-      addLog('nav', `Navigating to ${appName}`);
-      if (hasCredentials) {
-        addLog('info', `Loaded credentials for ${credUrl || appName}`);
+      if (auth.type !== 'none') {
+        addLog('info', `Authentication mode: ${auth.type}`);
       }
-      setProgress(18);
+
+      const authBlock = auth.type === 'none' ? `
+Authentication: none
+` : `
+Authentication:
+- Type: ${auth.type}
+- App URL: ${auth.appUrl}
+- Start route after login: ${auth.startRoute}
+- Email: ${auth.email}
+- Password: ${auth.password}
+- Google flow: ${auth.googleMode}
+- Success signal: ${auth.successSignal}
+- Google 2FA / consent notes: ${auth.google2FA}
+- Notes: ${auth.notes}
+- Test auth flows: ${device.testAuthFlows}
+`;
+
+      const deviceBlock = `
+Device testing:
+- Mode: ${device.mode}
+- Mobile preset: ${device.preset}
+- Orientation: ${device.orientation}
+- Custom viewport: ${device.customWidth || 'default'} x ${device.customHeight || 'default'}
+- Touch enabled: ${device.touchMode}
+- Slow network: ${device.slowNetwork}
+- Reduced motion: ${device.reducedMotion}
+- Prioritize mobile UX: ${device.testMobileUX}
+
+You must evaluate device-specific usability issues including:
+- touch targets
+- sticky hover states
+- overflow / horizontal scroll
+- drawers and modals
+- keyboard/input overlap
+- auth flow issues on mobile
+- responsive layout regressions
+`;
 
       const systemPrompt = `You are PHANTOM, an expert beta testing AI.
 Persona: ${personaKey === 'custom' && customPersona ? customPersona : persona.name}
 Style: ${persona.style}
 Expertise: ${persona.expertise}
-${hasCredentials ? `Authenticated app context:
-URL: ${credUrl}
-Username: ${credUsername}
-Password: ${credPassword}
-Notes: ${credNotes}` : ''}
+
+${authBlock}
+
+${deviceBlock}
 
 Return only valid JSON.`;
 
@@ -1406,14 +1600,16 @@ Return JSON:
       "description": "2-3 sentence explanation",
       "steps": ["step 1", "step 2"],
       "impact": "who is affected",
-      "recommendation": "concrete fix"
+      "recommendation": "concrete fix",
+      "device": "desktop|mobile|tablet|all"
     }
   ],
   "overallScore": 1,
   "scores": { "ux": 1, "reliability": 1, "accessibility": 1 },
   "verdict": "summary",
   "topStrengths": ["a", "b"],
-  "criticalIssues": ["x", "y"]
+  "criticalIssues": ["x", "y"],
+  "deviceNotes": ["note 1", "note 2"]
 }`;
 
       try {
@@ -1422,9 +1618,13 @@ Return JSON:
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'claude-sonnet-4-20250514',
-            max_tokens: 4000,
+            max_tokens: 5000,
             system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }]
+            messages: [{ role: 'user', content: userPrompt }],
+            metadata: {
+              auth,
+              device
+            }
           })
         });
 
@@ -1445,7 +1645,7 @@ Return JSON:
 
         lastResult = result;
         addLog('agent', result.agentThoughts || 'Initial analysis complete.');
-        addLog('info', (result.testingNarrative || 'Testing completed.').slice(0, 140) + '...');
+        addLog('info', (result.testingNarrative || 'Testing completed.').slice(0, 160) + '...');
         setProgress(78);
 
         qs('findingsContainer').innerHTML = '';
@@ -1482,6 +1682,9 @@ Return JSON:
       if (isFixing || !findings.length) return;
 
       const source = localStorage.getItem('phantom_sourceCode') || '';
+      const auth = getAuthConfig();
+      const device = getDeviceConfig();
+
       if (!source.trim()) {
         showToast('Paste source code in Settings first.', 'err');
         toggleDrawer();
@@ -1494,13 +1697,19 @@ Return JSON:
       setStatus('● FIXING', '#ffb840');
 
       const findingsSummary = findings.map((f, i) => {
-        return `${i + 1}. [${f.severity}] ${f.title}\nArea: ${f.area}\nIssue: ${f.description}\nRecommendation: ${f.recommendation}`;
+        return `${i + 1}. [${f.severity}] ${f.title}\nArea: ${f.area}\nDevice: ${f.device || 'n/a'}\nIssue: ${f.description}\nRecommendation: ${f.recommendation}`;
       }).join('\n\n');
 
-      const systemPrompt = `You are an expert frontend developer. Apply the smallest safe patch based on the findings. Return only JSON.`;
+      const systemPrompt = `You are an expert frontend developer. Apply the smallest safe patch based on the findings, including auth/mobile responsiveness if relevant. Return only JSON.`;
 
       const userPrompt = `Findings:
 ${findingsSummary}
+
+Auth context:
+${JSON.stringify(auth, null, 2)}
+
+Device context:
+${JSON.stringify(device, null, 2)}
 
 Current source:
 \`\`\`
@@ -1538,9 +1747,7 @@ Return:
           result = JSON.parse(match[0]);
         }
 
-        if (!result.patchedSource) {
-          throw new Error('No patched source returned');
-        }
+        if (!result.patchedSource) throw new Error('No patched source returned');
 
         fixedSource = result.patchedSource;
         localStorage.setItem('phantom_sourceCode', fixedSource);
@@ -1667,12 +1874,7 @@ Return:
           Accept: 'application/vnd.github+json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          title,
-          head,
-          base,
-          body
-        })
+        body: JSON.stringify({ title, head, base, body })
       });
 
       if (!res.ok) {
@@ -1686,12 +1888,12 @@ Return:
     async function autoFixPR() {
       const gh = getGHConfig();
       const source = fixedSource || localStorage.getItem('phantom_sourceCode') || '';
+      const auth = getAuthConfig();
+      const device = getDeviceConfig();
 
       if (!findings.length) return showToast('Run a test first.', 'err');
       if (!source.trim()) return showToast('No source available. Paste source or generate a fix first.', 'err');
-      if (!gh.token || !gh.owner || !gh.repo || !gh.base || !gh.filePath) {
-        return showToast('Complete GitHub settings first.', 'err');
-      }
+      if (!gh.token || !gh.owner || !gh.repo || !gh.base || !gh.filePath) return showToast('Complete GitHub settings first.', 'err');
 
       try {
         addLog('fix', `Preparing GitHub auto-fix PR for ${gh.owner}/${gh.repo}...`);
@@ -1711,8 +1913,18 @@ Return:
           ``,
           `This PR was generated from PHANTOM beta test findings.`,
           ``,
+          `### Auth Context`,
+          `- Type: ${auth.type}`,
+          `- Success signal: ${auth.successSignal || 'n/a'}`,
+          ``,
+          `### Device Context`,
+          `- Mode: ${device.mode}`,
+          `- Preset: ${device.preset}`,
+          `- Orientation: ${device.orientation}`,
+          `- Touch: ${device.touchMode}`,
+          ``,
           `### Findings`,
-          ...findings.map((f, i) => `${i + 1}. **[${f.severity}] ${f.title}** — ${f.recommendation || f.description}`),
+          ...findings.map((f, i) => `${i + 1}. **[${f.severity}] ${f.title}**${f.device ? ` (${f.device})` : ''} — ${f.recommendation || f.description}`),
           ``,
           `### Notes`,
           `- Base branch: \`${gh.base}\``,
