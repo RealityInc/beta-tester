@@ -953,8 +953,8 @@ ${credNotes ? '- Notes: ' + credNotes : ''}
 Assume you are logged in. Test authenticated features: dashboards, settings, user-specific data, gated functionality.` : '';
 
   const customDesc = personaKey === 'custom' && customPersonaText
-    ? \`You are a custom expert: \${customPersonaText}\`
-    : \`You are an expert \${persona.name} with deep knowledge of \${persona.expertise}.\`;
+    ? \'You are a custom expert: \${customPersonaText}\'
+    : \'You are an expert \${persona.name} with deep knowledge of \${persona.expertise}.\';
 
   const systemPrompt = `You are PHANTOM, an agentic beta testing AI that simulates expert user behavior.
 ${customDesc}
