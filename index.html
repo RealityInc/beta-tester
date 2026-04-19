@@ -1,146 +1,1747 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PHANTOM</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHANTOM — Agentic Beta Testing</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
 
-<style>
-body {
-  background: #0a0a0f;
-  color: white;
-  font-family: sans-serif;
-  margin: 0;
-}
+    :root {
+      --bg: #07070d;
+      --surface: #0f1018;
+      --surface2: #151724;
+      --border: #2a2d45;
+      --accent: #00d9ff;
+      --accent2: #ff3d71;
+      --accent3: #a8ff3e;
+      --text: #edf2ff;
+      --muted: #8d93b8;
+      --warn: #ffb840;
+      --shadow: 0 0 0 1px rgba(0, 217, 255, 0.12), 0 0 28px rgba(0, 217, 255, 0.08);
+    }
 
-.container {
-  padding: 20px;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-.persona-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100%;
+    }
 
-.persona-card {
-  border: 1px solid #2a2a38;
-  padding: 16px;
-  cursor: pointer;
-  transition: 0.2s;
-  -webkit-tap-highlight-color: transparent;
-}
+    body {
+      overflow-x: hidden;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 100% 4px, 4px 100%;
+    }
 
-.persona-card.active {
-  border-color: #00e5ff;
-  background: rgba(0,229,255,0.1);
-}
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.10) 2px,
+        rgba(0, 0, 0, 0.10) 4px
+      );
+      opacity: 0.5;
+      z-index: 9999;
+    }
 
-button {
-  margin-top: 20px;
-  padding: 14px;
-  width: 100%;
-  font-size: 16px;
-  cursor: pointer;
-}
-</style>
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 16, 24, 0.96);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 44px;
+      line-height: 0.95;
+      letter-spacing: 5px;
+      color: var(--accent);
+      text-shadow: 0 0 18px rgba(0, 217, 255, 0.35);
+    }
+
+    .logo span {
+      color: var(--accent2);
+    }
+
+    .sublogo {
+      margin-top: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+      line-height: 1.45;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .status-pill,
+    .settings-btn {
+      min-height: 52px;
+      min-width: 140px;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .status-pill {
+      border-color: var(--accent3);
+      color: var(--accent3);
+      box-shadow: inset 0 0 0 1px rgba(168, 255, 62, 0.06);
+    }
+
+    .settings-btn {
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .settings-btn:active,
+    .settings-btn:hover {
+      background: rgba(0, 217, 255, 0.06);
+      border-color: var(--accent);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      min-height: calc(100vh - 102px);
+    }
+
+    .left-panel {
+      border-right: 1px solid var(--border);
+      background: rgba(10, 11, 19, 0.7);
+    }
+
+    .right-panel {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-section {
+      padding: 22px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 14px 16px;
+      border-radius: 0;
+      outline: none;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    .persona-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .persona-card {
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.18);
+      padding: 18px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      user-select: none;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .persona-card:hover {
+      border-color: rgba(0, 217, 255, 0.55);
+      background: rgba(0, 217, 255, 0.04);
+    }
+
+    .persona-card.active {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(0, 217, 255, 0.11), rgba(0, 217, 255, 0.04));
+      box-shadow: inset 4px 0 0 0 var(--accent), 0 0 0 1px rgba(0, 217, 255, 0.12);
+    }
+
+    .persona-card .emoji {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .persona-card .title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+
+    .persona-card .desc {
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .config-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .config-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .ghost-btn {
+      width: 100%;
+      min-height: 54px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 3px;
+      transition: 0.18s ease;
+    }
+
+    .primary-btn {
+      border-color: var(--accent);
+      color: var(--accent);
+      margin-top: 18px;
+    }
+
+    .primary-btn:hover,
+    .primary-btn:active {
+      background: rgba(0, 217, 255, 0.08);
+      box-shadow: 0 0 22px rgba(0, 217, 255, 0.13);
+    }
+
+    .secondary-btn {
+      border-color: var(--accent3);
+      color: var(--accent3);
+      margin-top: 12px;
+    }
+
+    .secondary-btn:hover,
+    .secondary-btn:active {
+      background: rgba(168, 255, 62, 0.08);
+    }
+
+    .ghost-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      min-height: 44px;
+      color: var(--muted);
+    }
+
+    .ghost-btn:hover,
+    .ghost-btn:active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(0, 217, 255, 0.05);
+    }
+
+    .primary-btn:disabled,
+    .secondary-btn:disabled,
+    .ghost-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      height: 3px;
+      background: rgba(255,255,255,0.05);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      transition: width 0.35s ease;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 16, 24, 0.9);
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 14px 18px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .tab-panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .activity-log,
+    .findings-container,
+    .summary-container {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+
+    .empty-state {
+      min-height: 300px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 2px;
+      line-height: 1.8;
+      text-transform: uppercase;
+    }
+
+    .log-entry {
+      display: grid;
+      grid-template-columns: 78px 82px 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .log-time {
+      color: var(--muted);
+    }
+
+    .log-tag {
+      text-align: center;
+      padding: 2px 6px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      align-self: start;
+    }
+
+    .tag-info { background: rgba(255,255,255,0.06); color: var(--muted); }
+    .tag-agent { background: rgba(255,184,64,0.15); color: var(--warn); }
+    .tag-nav { background: rgba(0,217,255,0.15); color: var(--accent); }
+    .tag-finding { background: rgba(255,61,113,0.15); color: var(--accent2); }
+    .tag-fix { background: rgba(168,255,62,0.15); color: var(--accent3); }
+
+    .findings-toolbar,
+    .summary-toolbar {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: rgba(15, 16, 24, 0.8);
+    }
+
+    .toolbar-spacer {
+      flex: 1;
+    }
+
+    .toolbar-meta {
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .finding-card {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .finding-header {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .severity {
+      padding: 4px 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      border: 1px solid var(--border);
+      text-transform: uppercase;
+    }
+
+    .severity.critical { border-color: var(--accent2); color: var(--accent2); background: rgba(255,61,113,0.08); }
+    .severity.high { border-color: var(--warn); color: var(--warn); background: rgba(255,184,64,0.08); }
+    .severity.medium { border-color: var(--accent); color: var(--accent); background: rgba(0,217,255,0.08); }
+    .severity.low { border-color: var(--muted); color: var(--muted); background: rgba(255,255,255,0.04); }
+    .severity.ux { border-color: var(--accent3); color: var(--accent3); background: rgba(168,255,62,0.08); }
+
+    .finding-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 600;
+      min-width: 200px;
+    }
+
+    .finding-body {
+      color: #cad3ef;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .steps-list {
+      list-style: none;
+      margin: 10px 0;
+    }
+
+    .steps-list li {
+      position: relative;
+      padding-left: 18px;
+      margin-bottom: 5px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .steps-list li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 10px 16px;
+      flex-wrap: wrap;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .summary-box {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .summary-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 34px;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    .summary-sub {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .score-card {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .score-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .score-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 18px;
+    }
+
+    .pill {
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.68);
+      display: none;
+      justify-content: flex-end;
+      z-index: 50;
+    }
+
+    .drawer-overlay.open {
+      display: flex;
+    }
+
+    .drawer {
+      width: min(440px, 92vw);
+      height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 20px;
+      overflow: auto;
+      box-shadow: -12px 0 40px rgba(0,0,0,0.35);
+    }
+
+    .drawer-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: 3px;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .drawer-sub {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+
+    .drawer-section {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .drawer-section:first-of-type {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .drawer-section-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .drawer-field {
+      margin-bottom: 12px;
+    }
+
+    .drawer-field label {
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .drawer-hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .status-box {
+      margin-top: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .status-box.ok {
+      border-color: var(--accent3);
+      color: var(--accent3);
+      background: rgba(168,255,62,0.08);
+    }
+
+    .status-box.err {
+      border-color: var(--accent2);
+      color: var(--accent2);
+      background: rgba(255,61,113,0.08);
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 100;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      max-width: 320px;
+    }
+
+    .toast.ok { border-color: var(--accent3); color: var(--accent3); }
+    .toast.err { border-color: var(--accent2); color: var(--accent2); }
+    .toast.info { border-color: var(--accent); color: var(--accent); }
+
+    @media (max-width: 980px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .left-panel {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .status-pill,
+      .settings-btn {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header {
+        padding: 16px;
+      }
+
+      .logo {
+        font-size: 38px;
+      }
+
+      .sublogo {
+        font-size: 10px;
+        letter-spacing: 3px;
+      }
+
+      .panel-section {
+        padding: 18px 16px;
+      }
+
+      .persona-grid,
+      .config-row,
+      .score-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .finding-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .log-entry {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .activity-log,
+      .findings-container,
+      .summary-container {
+        padding: 16px;
+      }
+
+      .tabs {
+        padding-left: 6px;
+      }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="app">
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
+      <aside class="drawer" onclick="event.stopPropagation()">
+        <div class="drawer-title">⚙ SETTINGS</div>
+        <div class="drawer-sub">GitHub + Fix Pipeline</div>
 
-<div class="container">
+        <div class="drawer-section">
+          <div class="drawer-section-title">GitHub Repo</div>
 
-<h2>PHANTOM</h2>
+          <div class="drawer-field">
+            <label for="ghToken">GitHub Token</label>
+            <input id="ghToken" type="password" placeholder="ghp_xxxxx" oninput="saveSettings()" />
+          </div>
 
-<div class="persona-grid">
-  <div class="persona-card active" data-persona="cto">CTO</div>
-  <div class="persona-card" data-persona="pm">PM</div>
-  <div class="persona-card" data-persona="ux">UX</div>
-  <div class="persona-card" data-persona="founder">Founder</div>
-</div>
+          <div class="drawer-field">
+            <label for="ghOwner">Repo Owner</label>
+            <input id="ghOwner" type="text" placeholder="your-username" oninput="saveSettings()" />
+          </div>
 
-<button onclick="startTest()">▶ Deploy Agent</button>
-<button onclick="autoFix()">⚡ Auto Fix (GitHub)</button>
+          <div class="drawer-field">
+            <label for="ghRepo">Repo Name</label>
+            <input id="ghRepo" type="text" placeholder="your-repo" oninput="saveSettings()" />
+          </div>
 
-</div>
+          <div class="drawer-field">
+            <label for="ghBase">Base Branch</label>
+            <input id="ghBase" type="text" placeholder="main" oninput="saveSettings()" />
+          </div>
 
-<script>
-// FIXED PERSONA CLICK
-document.querySelectorAll('.persona-card').forEach(card => {
-  card.addEventListener('click', () => {
-    document.querySelectorAll('.persona-card').forEach(c => {
-      c.classList.remove('active');
+          <div class="drawer-field">
+            <label for="ghFilePath">Target File Path</label>
+            <input id="ghFilePath" type="text" placeholder="index.html" oninput="saveSettings()" />
+          </div>
+
+          <button class="ghost-btn" onclick="testGitHub()">VERIFY GITHUB</button>
+          <div id="ghStatus"></div>
+          <p class="drawer-hint" style="margin-top:10px;">
+            For production, move GitHub writes to a backend or GitHub App. This demo keeps the token in browser storage.
+          </p>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">App Credentials</div>
+
+          <div class="drawer-field">
+            <label for="credUrl">App URL</label>
+            <input id="credUrl" type="text" placeholder="https://your-app.com" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field">
+            <label for="credUsername">Username / Email</label>
+            <input id="credUsername" type="text" placeholder="user@example.com" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field">
+            <label for="credPassword">Password</label>
+            <input id="credPassword" type="password" placeholder="••••••••" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field">
+            <label for="credNotes">Additional Auth Notes</label>
+            <textarea id="credNotes" rows="3" placeholder="2FA code, SSO flow, seed data..." oninput="saveSettings()"></textarea>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Source File</div>
+
+          <div class="drawer-field">
+            <label for="sourceCode">Paste source HTML/JS/CSS</label>
+            <textarea id="sourceCode" rows="8" placeholder="Paste your file here for Generate Fix / Auto-Fix PR..." oninput="saveSettings()"></textarea>
+          </div>
+
+          <p class="drawer-hint">
+            The fix pipeline will use this source, your findings, and your selected target file path.
+          </p>
+        </div>
+
+        <div class="drawer-section">
+          <button class="ghost-btn" onclick="toggleDrawer()">CLOSE</button>
+        </div>
+      </aside>
+    </div>
+
+    <header class="header">
+      <div class="brand">
+        <div class="logo">PHAN<span>T</span>OM</div>
+        <div class="sublogo">Agentic Beta Testing<br />System v3.0</div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill" id="statusPill">● STANDBY</div>
+        <button class="settings-btn" id="settingsBtn" onclick="toggleDrawer()">⚙ SETTINGS</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="left-panel">
+        <div class="panel-section">
+          <div class="panel-label">Target Application</div>
+
+          <div class="field-label">App Name / URL</div>
+          <input id="appName" type="text" value="FounderOS Dashboard" placeholder="App name or URL..." />
+
+          <div class="field-label" style="margin-top:12px;">Description / Scope</div>
+          <textarea id="appDesc" rows="4">A startup operating system with kanban boards, OKR tracking, investor pipeline management, and team collaboration tools.</textarea>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-label">Expert Persona</div>
+
+          <div class="persona-grid" id="personaGrid">
+            <div class="persona-card active" data-persona="cto">
+              <div class="emoji">⚙️</div>
+              <div class="title">CTO / Tech Lead</div>
+              <div class="desc">arch, APIs, perf</div>
+            </div>
+
+            <div class="persona-card" data-persona="pm">
+              <div class="emoji">📋</div>
+              <div class="title">Product Manager</div>
+              <div class="desc">flows, edge cases</div>
+            </div>
+
+            <div class="persona-card" data-persona="designer">
+              <div class="emoji">🎨</div>
+              <div class="title">UX Designer</div>
+              <div class="desc">usability, a11y</div>
+            </div>
+
+            <div class="persona-card" data-persona="founder">
+              <div class="emoji">🚀</div>
+              <div class="title">Startup Founder</div>
+              <div class="desc">value, friction</div>
+            </div>
+
+            <div class="persona-card" data-persona="ops">
+              <div class="emoji">📊</div>
+              <div class="title">Operations Lead</div>
+              <div class="desc">data, workflow</div>
+            </div>
+
+            <div class="persona-card" data-persona="custom">
+              <div class="emoji">✏️</div>
+              <div class="title">Custom Persona</div>
+              <div class="desc">define your own</div>
+            </div>
+          </div>
+
+          <textarea id="customPersona" rows="3" placeholder="Describe your custom persona..." style="display:none; margin-top:12px;"></textarea>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-label">Test Configuration</div>
+
+          <div class="config-grid">
+            <div>
+              <div class="field-label">Test Depth</div>
+              <select id="testDepth">
+                <option value="quick">Quick Scan (5–10 findings)</option>
+                <option value="standard" selected>Standard Audit (15–25 findings)</option>
+                <option value="deep">Deep Dive (30+ findings)</option>
+              </select>
+            </div>
+
+            <div class="config-row">
+              <div>
+                <div class="field-label">Focus Area</div>
+                <select id="focusArea">
+                  <option value="all">All Features</option>
+                  <option value="ux">UX / Usability</option>
+                  <option value="bugs">Bug Detection</option>
+                  <option value="perf">Performance</option>
+                  <option value="a11y">Accessibility</option>
+                </select>
+              </div>
+
+              <div>
+                <div class="field-label">User Skill Level</div>
+                <select id="skillLevel">
+                  <option value="novice">Novice</option>
+                  <option value="average" selected>Average</option>
+                  <option value="power">Power User</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="primary-btn" id="runBtn" onclick="startTest()">▶ DEPLOY AGENT</button>
+          <button class="secondary-btn" id="fixBtn" onclick="generateFix()" disabled>⚡ GENERATE FIX</button>
+          <button class="secondary-btn" id="autoFixBtn" onclick="autoFixPR()" disabled>⬡ AUTO-FIX PR</button>
+        </div>
+      </section>
+
+      <section class="right-panel">
+        <div class="progress">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="log">Activity Log</div>
+          <div class="tab" data-tab="findings">Findings <span id="findingsCount"></span></div>
+          <div class="tab" data-tab="summary">Summary</div>
+        </div>
+
+        <div class="tab-panel active" id="tab-log">
+          <div class="activity-log" id="activityLog">
+            <div class="empty-state" id="logEmpty">Agent on standby<br />Configure and deploy</div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-findings">
+          <div class="findings-toolbar">
+            <button class="ghost-btn" onclick="copyFindingsJSON()">COPY JSON</button>
+            <button class="ghost-btn" onclick="copyFindingsMarkdown()">COPY MARKDOWN</button>
+            <div class="toolbar-spacer"></div>
+            <div class="toolbar-meta" id="findingsMeta">0 findings</div>
+          </div>
+          <div class="findings-container" id="findingsContainer">
+            <div class="empty-state">No findings yet</div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-summary">
+          <div class="summary-toolbar">
+            <button class="ghost-btn" onclick="copyFindingsMarkdown()">COPY REPORT</button>
+            <div class="toolbar-spacer"></div>
+            <div class="toolbar-meta" id="summaryMeta">Awaiting run</div>
+          </div>
+          <div class="summary-container" id="summaryContainer">
+            <div class="empty-state">Run a test to generate summary</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let isRunning = false;
+    let isFixing = false;
+    let findings = [];
+    let lastResult = null;
+    let fixedSource = '';
+
+    const personas = {
+      cto: {
+        name: 'CTO / Tech Lead',
+        style: 'analytical and precise',
+        expertise: 'system architecture, APIs, performance, reliability'
+      },
+      pm: {
+        name: 'Product Manager',
+        style: 'flow and edge-case focused',
+        expertise: 'user journeys, completeness, friction'
+      },
+      designer: {
+        name: 'UX Designer',
+        style: 'detail-obsessed and accessibility-aware',
+        expertise: 'usability, hierarchy, accessibility'
+      },
+      founder: {
+        name: 'Startup Founder',
+        style: 'high-signal and impatient',
+        expertise: 'time-to-value, friction, differentiation'
+      },
+      ops: {
+        name: 'Operations Lead',
+        style: 'systematic and workflow-oriented',
+        expertise: 'data, permissions, auditability'
+      },
+      custom: {
+        name: 'Custom Persona',
+        style: 'custom',
+        expertise: 'user-defined'
+      }
+    };
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function saveSettings() {
+      const ids = [
+        'ghToken',
+        'ghOwner',
+        'ghRepo',
+        'ghBase',
+        'ghFilePath',
+        'credUrl',
+        'credUsername',
+        'credPassword',
+        'credNotes',
+        'sourceCode'
+      ];
+      ids.forEach((id) => localStorage.setItem('phantom_' + id, qs(id).value));
+    }
+
+    function loadSettings() {
+      const defaults = {
+        ghBase: 'main',
+        ghFilePath: 'index.html'
+      };
+
+      const ids = [
+        'ghToken',
+        'ghOwner',
+        'ghRepo',
+        'ghBase',
+        'ghFilePath',
+        'credUrl',
+        'credUsername',
+        'credPassword',
+        'credNotes',
+        'sourceCode'
+      ];
+
+      ids.forEach((id) => {
+        qs(id).value = localStorage.getItem('phantom_' + id) || defaults[id] || '';
+      });
+    }
+
+    function getGHConfig() {
+      return {
+        token: localStorage.getItem('phantom_ghToken') || '',
+        owner: localStorage.getItem('phantom_ghOwner') || '',
+        repo: localStorage.getItem('phantom_ghRepo') || '',
+        base: localStorage.getItem('phantom_ghBase') || 'main',
+        filePath: localStorage.getItem('phantom_ghFilePath') || 'index.html'
+      };
+    }
+
+    function toggleDrawer() {
+      loadSettings();
+      const overlay = qs('drawerOverlay');
+      const open = overlay.classList.toggle('open');
+      qs('settingsBtn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function closeDrawer(e) {
+      if (e.target === qs('drawerOverlay')) {
+        toggleDrawer();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && qs('drawerOverlay').classList.contains('open')) {
+        toggleDrawer();
+      }
     });
-    card.classList.add('active');
-  });
-});
 
-// TEST BUTTON WORKS
-function startTest() {
-  const active = document.querySelector('.persona-card.active');
-  alert("Running test as: " + active.dataset.persona);
-}
+    function now() {
+      return new Date().toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
 
-// GITHUB AUTO FIX (CLIENT DEMO)
-async function autoFix() {
-  const token = prompt("GitHub Token");
-  const owner = prompt("Repo Owner");
-  const repo = prompt("Repo Name");
+    function showToast(msg, type = 'info') {
+      document.querySelector('.toast')?.remove();
+      const t = document.createElement('div');
+      t.className = 'toast ' + type;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3200);
+    }
 
-  const branch = "phantom-fix-" + Date.now();
+    function addLog(type, msg) {
+      qs('logEmpty')?.remove();
+      const log = qs('activityLog');
+      const row = document.createElement('div');
+      row.className = 'log-entry';
+      row.innerHTML = `
+        <div class="log-time">${now()}</div>
+        <div class="log-tag tag-${type}">${type.toUpperCase()}</div>
+        <div>${msg}</div>
+      `;
+      log.appendChild(row);
+      log.scrollTop = log.scrollHeight;
+    }
 
-  const filePath = "index.html";
+    function setProgress(n) {
+      qs('progressFill').style.width = n + '%';
+    }
 
-  const content = btoa("<h1>Updated by PHANTOM</h1>");
+    document.querySelectorAll('.persona-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.persona-card').forEach((c) => c.classList.remove('active'));
+        card.classList.add('active');
+        qs('customPersona').style.display = card.dataset.persona === 'custom' ? 'block' : 'none';
+      });
+    });
 
-  // create branch
-  const base = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/main`, {
-    headers: { Authorization: `token ${token}` }
-  }).then(r => r.json());
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const name = tab.dataset.tab;
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        tab.classList.add('active');
+        qs('tab-' + name).classList.add('active');
+      });
+    });
 
-  await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, {
-    method: "POST",
-    headers: {
-      Authorization: `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      ref: `refs/heads/${branch}`,
-      sha: base.object.sha
-    })
-  });
+    function getSelectedPersonaKey() {
+      return document.querySelector('.persona-card.active')?.dataset.persona || 'cto';
+    }
 
-  // commit file
-  await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      message: "phantom auto fix",
-      content,
-      branch
-    })
-  });
+    function setStatus(text, color) {
+      const el = qs('statusPill');
+      el.textContent = text;
+      el.style.borderColor = color;
+      el.style.color = color;
+    }
 
-  // create PR
-  const pr = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
-    method: "POST",
-    headers: {
-      Authorization: `token ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      title: "PHANTOM Auto Fix",
-      head: branch,
-      base: "main"
-    })
-  }).then(r => r.json());
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
-  alert("PR Created: " + pr.html_url);
-}
-</script>
+    function addFindingCard(finding) {
+      const container = qs('findingsContainer');
+      container.querySelector('.empty-state')?.remove();
 
+      const card = document.createElement('div');
+      card.className = 'finding-card';
+
+      const steps = (finding.steps || []).map((s) => `<li>${s}</li>`).join('');
+      card.innerHTML = `
+        <div class="finding-header">
+          <div class="severity ${finding.severity.toLowerCase()}">${finding.severity}</div>
+          <div class="finding-title">${finding.title}</div>
+        </div>
+        <div class="finding-body">${finding.description}</div>
+        ${steps ? `<ul class="steps-list">${steps}</ul>` : ''}
+        <div class="meta-row">
+          <div>AREA: ${finding.area}</div>
+          <div>IMPACT: ${finding.impact}</div>
+          ${finding.recommendation ? `<div>FIX: ${finding.recommendation}</div>` : ''}
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    function buildSummary(result, appName, personaName) {
+      const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0, UX: 0 };
+      result.findings.forEach((f) => {
+        if (sevCounts[f.severity] !== undefined) sevCounts[f.severity]++;
+      });
+
+      const scoreColor = (v) => (v >= 8 ? 'var(--accent3)' : v >= 6 ? 'var(--accent)' : v >= 4 ? 'var(--warn)' : 'var(--accent2)');
+      qs('summaryMeta').textContent = `${result.findings.length} findings · score ${result.overallScore}/10`;
+
+      qs('summaryContainer').innerHTML = `
+        <div class="summary-box">
+          <div class="summary-title">${appName} — Beta Audit</div>
+          <div class="summary-sub">Tested by ${personaName} · ${new Date().toLocaleDateString()}</div>
+
+          <div class="score-grid">
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.overallScore)}">${result.overallScore}</div><div class="score-label">Overall</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.ux)}">${result.scores.ux}</div><div class="score-label">UX</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.reliability)}">${result.scores.reliability}</div><div class="score-label">Reliability</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.accessibility)}">${result.scores.accessibility}</div><div class="score-label">A11Y</div></div>
+          </div>
+
+          <div class="pill-row">
+            ${Object.entries(sevCounts).filter(([,v]) => v > 0).map(([k,v]) => `<div class="pill">${v} ${k}</div>`).join('')}
+          </div>
+
+          <div class="summary-box" style="margin-bottom:12px;">
+            <div class="panel-label" style="margin-bottom:10px;">Expert Verdict</div>
+            <div style="line-height:1.8; color:#ced6f2;">${result.verdict}</div>
+          </div>
+
+          ${
+            result.topStrengths?.length
+              ? `
+            <div class="summary-box" style="border-color:rgba(168,255,62,0.35);">
+              <div class="panel-label" style="margin-bottom:10px; color:var(--accent3);">Top Strengths</div>
+              ${result.topStrengths.map((s) => `<div style="margin-bottom:8px; color:#c8f2b0;">✓ ${s}</div>`).join('')}
+            </div>
+          `
+              : ''
+          }
+
+          ${
+            result.criticalIssues?.length
+              ? `
+            <div class="summary-box" style="border-color:rgba(255,61,113,0.35);">
+              <div class="panel-label" style="margin-bottom:10px; color:var(--accent2);">Priority Fixes</div>
+              ${result.criticalIssues.map((s) => `<div style="margin-bottom:8px; color:#ffb0c4;">⚠ ${s}</div>`).join('')}
+            </div>
+          `
+              : ''
+          }
+        </div>
+      `;
+    }
+
+    function copyFindingsJSON() {
+      if (!findings.length) return showToast('No findings to copy.', 'err');
+      navigator.clipboard.writeText(JSON.stringify(findings, null, 2));
+      showToast('Findings JSON copied.', 'ok');
+    }
+
+    function copyFindingsMarkdown() {
+      if (!lastResult || !findings.length) return showToast('No report yet.', 'err');
+      const appName = qs('appName').value.trim() || 'App';
+      const persona = personas[getSelectedPersonaKey()].name;
+
+      const md = [
+        `# PHANTOM Beta Audit: ${appName}`,
+        ``,
+        `**Persona:** ${persona}`,
+        `**Score:** ${lastResult.overallScore}/10`,
+        `**Findings:** ${findings.length}`,
+        ``,
+        `## Verdict`,
+        lastResult.verdict,
+        ``,
+        `## Findings`,
+        ...findings.flatMap((f, i) => [
+          `### ${i + 1}. [${f.severity}] ${f.title}`,
+          `- Area: ${f.area}`,
+          `- Impact: ${f.impact}`,
+          ``,
+          `${f.description}`,
+          ``,
+          ...(f.steps?.length ? [`Steps:`, ...f.steps.map((s, idx) => `${idx + 1}. ${s}`), ``] : []),
+          ...(f.recommendation ? [`Recommendation: ${f.recommendation}`, ``] : [])
+        ])
+      ].join('\n');
+
+      navigator.clipboard.writeText(md);
+      showToast('Markdown copied.', 'ok');
+    }
+
+    async function startTest() {
+      if (isRunning) return;
+
+      const appName = qs('appName').value.trim() || 'the application';
+      const appDesc = qs('appDesc').value.trim() || 'A web application';
+      const personaKey = getSelectedPersonaKey();
+      const persona = personas[personaKey];
+      const customPersona = qs('customPersona').value.trim();
+      const depth = qs('testDepth').value;
+      const focus = qs('focusArea').value;
+      const skill = qs('skillLevel').value;
+
+      const credUrl = localStorage.getItem('phantom_credUrl') || '';
+      const credUsername = localStorage.getItem('phantom_credUsername') || '';
+      const credPassword = localStorage.getItem('phantom_credPassword') || '';
+      const credNotes = localStorage.getItem('phantom_credNotes') || '';
+      const hasCredentials = !!(credUsername || credPassword);
+
+      isRunning = true;
+      findings = [];
+      lastResult = null;
+      fixedSource = '';
+
+      qs('runBtn').disabled = true;
+      qs('fixBtn').disabled = true;
+      qs('autoFixBtn').disabled = true;
+      qs('findingsCount').textContent = '';
+      qs('findingsMeta').textContent = '0 findings';
+      qs('summaryMeta').textContent = 'Awaiting run';
+      qs('activityLog').innerHTML = '<div class="empty-state" id="logEmpty">Agent initializing...</div>';
+      qs('findingsContainer').innerHTML = '<div class="empty-state">Scanning...</div>';
+      qs('summaryContainer').innerHTML = '<div class="empty-state">Awaiting completion</div>';
+
+      setStatus('● SCANNING', '#ffb840');
+      setProgress(6);
+
+      addLog('agent', `Initializing ${persona.name} agent...`);
+      addLog('info', `Target: ${appName}`);
+      addLog('info', `Focus: ${focus} | Depth: ${depth} | Skill: ${skill}`);
+
+      await sleep(300);
+      addLog('nav', `Navigating to ${appName}`);
+      if (hasCredentials) {
+        addLog('info', `Loaded credentials for ${credUrl || appName}`);
+      }
+      setProgress(18);
+
+      const systemPrompt = `You are PHANTOM, an expert beta testing AI.
+Persona: ${personaKey === 'custom' && customPersona ? customPersona : persona.name}
+Style: ${persona.style}
+Expertise: ${persona.expertise}
+${hasCredentials ? `Authenticated app context:
+URL: ${credUrl}
+Username: ${credUsername}
+Password: ${credPassword}
+Notes: ${credNotes}` : ''}
+
+Return only valid JSON.`;
+
+      const userPrompt = `Beta test this application:
+App: ${appName}
+Description: ${appDesc}
+Depth: ${depth}
+Focus: ${focus}
+Skill level: ${skill}
+
+Return JSON:
+{
+  "agentThoughts": "short first impression",
+  "testingNarrative": "1 paragraph",
+  "findings": [
+    {
+      "title": "specific finding",
+      "severity": "Critical|High|Medium|Low|UX",
+      "area": "feature area",
+      "description": "2-3 sentence explanation",
+      "steps": ["step 1", "step 2"],
+      "impact": "who is affected",
+      "recommendation": "concrete fix"
+    }
+  ],
+  "overallScore": 1,
+  "scores": { "ux": 1, "reliability": 1, "accessibility": 1 },
+  "verdict": "summary",
+  "topStrengths": ["a", "b"],
+  "criticalIssues": ["x", "y"]
+}`;
+
+      try {
+        const response = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 4000,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userPrompt }]
+          })
+        });
+
+        setProgress(58);
+        addLog('agent', 'Processing model response...');
+
+        const data = await response.json();
+        const raw = data.content?.[0]?.text || '';
+
+        let result;
+        try {
+          result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+        } catch {
+          const match = raw.match(/\{[\s\S]*\}/);
+          if (!match) throw new Error('Could not parse response');
+          result = JSON.parse(match[0]);
+        }
+
+        lastResult = result;
+        addLog('agent', result.agentThoughts || 'Initial analysis complete.');
+        addLog('info', (result.testingNarrative || 'Testing completed.').slice(0, 140) + '...');
+        setProgress(78);
+
+        qs('findingsContainer').innerHTML = '';
+        findings = result.findings || [];
+
+        findings.forEach((f, idx) => {
+          addFindingCard(f);
+          addLog(f.severity === 'Critical' || f.severity === 'High' ? 'finding' : 'info', `[${f.severity}] ${f.title}`);
+          qs('findingsCount').textContent = `(${idx + 1}/${findings.length})`;
+        });
+
+        qs('findingsCount').textContent = findings.length ? `(${findings.length})` : '';
+        qs('findingsMeta').textContent = `${findings.length} findings`;
+        buildSummary(result, appName, persona.name);
+
+        setProgress(100);
+        setStatus('● COMPLETE', '#a8ff3e');
+        qs('fixBtn').disabled = !findings.length;
+        qs('autoFixBtn').disabled = !findings.length;
+
+        addLog('fix', `Test complete. ${findings.length} findings generated.`);
+        document.querySelector('[data-tab="findings"]').click();
+      } catch (err) {
+        addLog('finding', `Agent error: ${err.message}`);
+        setStatus('● ERROR', '#ff3d71');
+        showToast(err.message, 'err');
+      } finally {
+        isRunning = false;
+        qs('runBtn').disabled = false;
+      }
+    }
+
+    async function generateFix() {
+      if (isFixing || !findings.length) return;
+
+      const source = localStorage.getItem('phantom_sourceCode') || '';
+      if (!source.trim()) {
+        showToast('Paste source code in Settings first.', 'err');
+        toggleDrawer();
+        return;
+      }
+
+      isFixing = true;
+      qs('fixBtn').disabled = true;
+      addLog('fix', 'Generate Fix agent starting...');
+      setStatus('● FIXING', '#ffb840');
+
+      const findingsSummary = findings.map((f, i) => {
+        return `${i + 1}. [${f.severity}] ${f.title}\nArea: ${f.area}\nIssue: ${f.description}\nRecommendation: ${f.recommendation}`;
+      }).join('\n\n');
+
+      const systemPrompt = `You are an expert frontend developer. Apply the smallest safe patch based on the findings. Return only JSON.`;
+
+      const userPrompt = `Findings:
+${findingsSummary}
+
+Current source:
+\`\`\`
+${source.substring(0, 70000)}
+\`\`\`
+
+Return:
+{
+  "summary": "what changed",
+  "changesApplied": ["a","b"],
+  "patchedSource": "full updated file"
+}`;
+
+      try {
+        const response = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 8000,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: userPrompt }]
+          })
+        });
+
+        const data = await response.json();
+        const raw = data.content?.[0]?.text || '';
+
+        let result;
+        try {
+          result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+        } catch {
+          const match = raw.match(/\{[\s\S]*\}/);
+          if (!match) throw new Error('Could not parse fix response');
+          result = JSON.parse(match[0]);
+        }
+
+        if (!result.patchedSource) {
+          throw new Error('No patched source returned');
+        }
+
+        fixedSource = result.patchedSource;
+        localStorage.setItem('phantom_sourceCode', fixedSource);
+        qs('sourceCode').value = fixedSource;
+
+        addLog('fix', `Patch generated: ${result.summary}`);
+        showToast('Fix generated successfully.', 'ok');
+        qs('autoFixBtn').disabled = false;
+        setStatus('● READY', '#a8ff3e');
+      } catch (err) {
+        addLog('finding', `Fix error: ${err.message}`);
+        showToast(err.message, 'err');
+        setStatus('● ERROR', '#ff3d71');
+      } finally {
+        isFixing = false;
+        qs('fixBtn').disabled = false;
+      }
+    }
+
+    async function testGitHub() {
+      const { token, owner, repo } = getGHConfig();
+      const status = qs('ghStatus');
+
+      if (!token || !owner || !repo) {
+        status.innerHTML = `<div class="status-box err">Fill token, owner, and repo first.</div>`;
+        return;
+      }
+
+      status.innerHTML = `<div class="status-box">Connecting...</div>`;
+
+      try {
+        const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+          headers: {
+            Authorization: `token ${token}`,
+            Accept: 'application/vnd.github+json'
+          }
+        });
+
+        if (!r.ok) throw new Error(`GitHub ${r.status}`);
+        const data = await r.json();
+        status.innerHTML = `<div class="status-box ok">Connected to ${data.full_name}</div>`;
+      } catch (err) {
+        status.innerHTML = `<div class="status-box err">${err.message}</div>`;
+      }
+    }
+
+    async function getBranchSha(token, owner, repo, branch) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}`, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json'
+        }
+      });
+      if (!res.ok) throw new Error(`Could not read base branch ${branch}`);
+      const data = await res.json();
+      return data.object.sha;
+    }
+
+    async function createBranch(token, owner, repo, newBranch, fromSha) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/refs`, {
+        method: 'POST',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ref: `refs/heads/${newBranch}`,
+          sha: fromSha
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Could not create branch');
+      }
+    }
+
+    async function getFileSha(token, owner, repo, path, branch) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${branch}`, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json'
+        }
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error('Could not fetch file metadata');
+      const data = await res.json();
+      return data.sha || null;
+    }
+
+    function utf8ToBase64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    async function updateFile(token, owner, repo, path, content, branch, sha) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `PHANTOM auto-fix: ${path}`,
+          content: utf8ToBase64(content),
+          branch,
+          sha: sha || undefined
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Could not update file');
+      }
+
+      return res.json();
+    }
+
+    async function createPullRequest(token, owner, repo, head, base, title, body) {
+      const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls`, {
+        method: 'POST',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title,
+          head,
+          base,
+          body
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Could not create PR');
+      }
+
+      return res.json();
+    }
+
+    async function autoFixPR() {
+      const gh = getGHConfig();
+      const source = fixedSource || localStorage.getItem('phantom_sourceCode') || '';
+
+      if (!findings.length) return showToast('Run a test first.', 'err');
+      if (!source.trim()) return showToast('No source available. Paste source or generate a fix first.', 'err');
+      if (!gh.token || !gh.owner || !gh.repo || !gh.base || !gh.filePath) {
+        return showToast('Complete GitHub settings first.', 'err');
+      }
+
+      try {
+        addLog('fix', `Preparing GitHub auto-fix PR for ${gh.owner}/${gh.repo}...`);
+        setStatus('● PUSHING', '#ffb840');
+
+        const branchName = `phantom-fix-${Date.now()}`;
+        const baseSha = await getBranchSha(gh.token, gh.owner, gh.repo, gh.base);
+        await createBranch(gh.token, gh.owner, gh.repo, branchName, baseSha);
+        addLog('fix', `Created branch ${branchName}`);
+
+        const existingSha = await getFileSha(gh.token, gh.owner, gh.repo, gh.filePath, branchName);
+        await updateFile(gh.token, gh.owner, gh.repo, gh.filePath, source, branchName, existingSha);
+        addLog('fix', `Updated ${gh.filePath}`);
+
+        const prBody = [
+          `## PHANTOM Auto-Fix`,
+          ``,
+          `This PR was generated from PHANTOM beta test findings.`,
+          ``,
+          `### Findings`,
+          ...findings.map((f, i) => `${i + 1}. **[${f.severity}] ${f.title}** — ${f.recommendation || f.description}`),
+          ``,
+          `### Notes`,
+          `- Base branch: \`${gh.base}\``,
+          `- Target file: \`${gh.filePath}\``,
+          `- Review recommended before merge.`
+        ].join('\n');
+
+        const pr = await createPullRequest(
+          gh.token,
+          gh.owner,
+          gh.repo,
+          branchName,
+          gh.base,
+          `PHANTOM Auto-Fix: ${gh.filePath}`,
+          prBody
+        );
+
+        addLog('fix', `PR created: #${pr.number}`);
+        setStatus('● COMPLETE', '#a8ff3e');
+        showToast(`PR created: #${pr.number}`, 'ok');
+        window.open(pr.html_url, '_blank');
+      } catch (err) {
+        addLog('finding', `GitHub auto-fix failed: ${err.message}`);
+        setStatus('● ERROR', '#ff3d71');
+        showToast(err.message, 'err');
+      }
+    }
+
+    loadSettings();
+  </script>
 </body>
 </html>
