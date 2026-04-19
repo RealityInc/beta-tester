@@ -663,7 +663,7 @@ Return a JSON object with exactly this structure (no markdown, no backticks):
     addLog('fix', 'Sending source + findings to fix agent...');
     await sleep(500);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/api/proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -927,7 +927,7 @@ Return ONLY a valid JSON object — no markdown, no backticks, no preamble:
     addLog('action', `Testing core workflow: create → edit → manage`);
     setProgress(32);
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/api/proxy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
