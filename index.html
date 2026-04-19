@@ -16,7 +16,7 @@
     --accent2: #ff3d71;
     --accent3: #a8ff3e;
     --text: #e8e8f0;
-    --muted: #8e8ea8;
+    --muted: #6b6b82;
     --warn: #ffb840;
   }
 
@@ -60,18 +60,6 @@
     cursor: pointer; letter-spacing: 2px; transition: all 0.15s;
   }
   .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .settings-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  /* ── A11Y: Global focus-visible styles ── */
-  :focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  /* Remove default outline only when we've provided our own */
-  button:focus:not(:focus-visible),
-  input:focus:not(:focus-visible),
-  select:focus:not(:focus-visible),
-  textarea:focus:not(:focus-visible) { outline: none; }
 
   /* ── Settings Drawer ── */
   .drawer-overlay {
@@ -121,7 +109,7 @@
   select option { background: var(--surface2); }
 
   .persona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .persona-card { padding: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; min-height: 44px; }
+  .persona-card { padding: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
   .persona-card:hover { border-color: var(--accent); background: rgba(0,229,255,0.05); }
   .persona-card.active { border-color: var(--accent); background: rgba(0,229,255,0.08); }
   .persona-card.active::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--accent); }
@@ -174,7 +162,6 @@
     padding: 5px 14px; background: transparent; border: 1px solid var(--border);
     color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 10px;
     letter-spacing: 2px; cursor: pointer; transition: all 0.15s; text-transform: uppercase;
-    min-height: 44px; min-width: 44px;
   }
   .toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
   .toolbar-btn.gh { border-color: rgba(168,255,62,0.4); color: var(--accent3); }
@@ -290,7 +277,7 @@
 <body>
 
 <!-- Settings Drawer -->
-<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)" role="dialog" aria-modal="true" aria-label="Settings">
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
   <div class="drawer">
     <div class="drawer-title">⚙ Settings</div>
     <div class="drawer-sub">GITHUB + ITERATION CONFIG</div>
@@ -315,28 +302,6 @@
     </div>
 
     <div class="drawer-section">
-      <div class="drawer-section-title">App Credentials</div>
-      <p class="drawer-hint" style="margin-bottom:12px;">If the app you're testing requires a login, enter credentials here. The agent will include them in its testing context so it can reason about authenticated flows, dashboards, and gated features.</p>
-      <div class="drawer-field">
-        <label for="credUrl">App URL</label>
-        <input type="text" id="credUrl" placeholder="https://your-app.com" oninput="saveSettings()">
-      </div>
-      <div class="drawer-field">
-        <label for="credUsername">Username / Email</label>
-        <input type="text" id="credUsername" placeholder="user@example.com" autocomplete="off" oninput="saveSettings()">
-      </div>
-      <div class="drawer-field">
-        <label for="credPassword">Password</label>
-        <input type="password" id="credPassword" placeholder="••••••••" autocomplete="off" oninput="saveSettings()">
-      </div>
-      <div class="drawer-field">
-        <label for="credNotes">Additional Auth Notes</label>
-        <textarea id="credNotes" rows="2" placeholder="e.g. use test account, 2FA code is 123456, login via Google SSO..." oninput="saveSettings()"></textarea>
-      </div>
-      <p class="drawer-hint">⚠ Stored in your browser only (localStorage). Never transmitted except as part of the prompt sent to Claude. Use test/staging credentials, not production passwords.</p>
-    </div>
-
-    <div class="drawer-section">
       <div class="drawer-section-title">Source File (for Generate Fix)</div>
       <div class="drawer-field">
         <label>Paste source HTML to patch</label>
@@ -352,11 +317,11 @@
 <div class="header">
   <div>
     <div class="logo">PHAN<span>T</span>OM</div>
-    <div class="header-sub">Agentic Beta Testing System v3.0</div>
+    <div class="header-sub">Agentic Beta Testing System v2.0</div>
   </div>
-  <div class="header-right" role="toolbar" aria-label="Application controls">
-    <div class="status-pill" id="statusPill" role="status" aria-live="polite">● STANDBY</div>
-    <button class="settings-btn" onclick="toggleDrawer()" aria-label="Open settings" aria-expanded="false" id="settingsToggleBtn">⚙ SETTINGS</button>
+  <div class="header-right">
+    <div class="status-pill" id="statusPill">● STANDBY</div>
+    <button class="settings-btn" onclick="toggleDrawer()">⚙ SETTINGS</button>
   </div>
 </div>
 
@@ -442,8 +407,8 @@
       </div>
     </div>
 
-    <button class="run-btn" id="runBtn" onclick="startTest()" aria-label="Deploy testing agent">▶ DEPLOY AGENT</button>
-    <button class="fix-btn" id="fixBtn" onclick="generateFix()" disabled aria-label="Generate fix from findings">⚡ GENERATE FIX</button>
+    <button class="run-btn" id="runBtn" onclick="startTest()">▶ DEPLOY AGENT</button>
+    <button class="fix-btn" id="fixBtn" onclick="generateFix()" disabled>⚡ GENERATE FIX</button>
 
     <!-- Fix output lives in the left panel -->
     <div class="fix-output" id="fixOutput">
@@ -523,10 +488,6 @@ function saveSettings() {
   localStorage.setItem('phantom_ghOwner', document.getElementById('ghOwner').value);
   localStorage.setItem('phantom_ghRepo', document.getElementById('ghRepo').value);
   localStorage.setItem('phantom_source', document.getElementById('sourceCode').value);
-  localStorage.setItem('phantom_credUrl', document.getElementById('credUrl').value);
-  localStorage.setItem('phantom_credUsername', document.getElementById('credUsername').value);
-  localStorage.setItem('phantom_credPassword', document.getElementById('credPassword').value);
-  localStorage.setItem('phantom_credNotes', document.getElementById('credNotes').value);
 }
 
 function loadSettings() {
@@ -534,10 +495,6 @@ function loadSettings() {
   document.getElementById('ghOwner').value = localStorage.getItem('phantom_ghOwner') || '';
   document.getElementById('ghRepo').value = localStorage.getItem('phantom_ghRepo') || '';
   document.getElementById('sourceCode').value = localStorage.getItem('phantom_source') || '';
-  document.getElementById('credUrl').value = localStorage.getItem('phantom_credUrl') || '';
-  document.getElementById('credUsername').value = localStorage.getItem('phantom_credUsername') || '';
-  document.getElementById('credPassword').value = localStorage.getItem('phantom_credPassword') || '';
-  document.getElementById('credNotes').value = localStorage.getItem('phantom_credNotes') || '';
 }
 
 function getGHConfig() {
@@ -551,9 +508,7 @@ function getGHConfig() {
 // ── Drawer ─────────────────────────────────────────────────────
 function toggleDrawer() {
   loadSettings();
-  const overlay = document.getElementById('drawerOverlay');
-  overlay.classList.toggle('open');
-  updateSettingsAria(overlay.classList.contains('open'));
+  document.getElementById('drawerOverlay').classList.toggle('open');
 }
 
 function closeDrawer(e) {
@@ -925,9 +880,6 @@ async function startTest() {
   addLog('info', `Focus: ${focus === 'all' ? 'Comprehensive' : focus} | Depth: ${depth} | Skill: ${skill}`);
   await sleep(800);
   addLog('agent', `Persona loaded: ${persona.name} — ${persona.style.split('.')[0]}.`);
-  if (hasCredentials) {
-    addLog('info', `Credentials loaded for ${credUrl || appName} — authenticated flows will be tested.`);
-  }
   await sleep(600);
   addLog('nav', `Navigating to ${appName} — establishing baseline session`);
   setProgress(12);
@@ -937,32 +889,16 @@ async function startTest() {
   addLog('info', `App description parsed: "${appDesc.substring(0, 80)}${appDesc.length > 80 ? '...' : ''}"`);
   setProgress(18);
 
-  // Grab any stored credentials
-  const credUrl = localStorage.getItem('phantom_credUrl') || '';
-  const credUsername = localStorage.getItem('phantom_credUsername') || '';
-  const credPassword = localStorage.getItem('phantom_credPassword') || '';
-  const credNotes = localStorage.getItem('phantom_credNotes') || '';
-  const hasCredentials = credUsername || credPassword;
-
-  const credBlock = hasCredentials ? `
-The app requires authentication. Use these credentials when reasoning about logged-in flows:
-- URL: ${credUrl || appName}
-- Username/Email: ${credUsername}
-- Password: ${credPassword}
-${credNotes ? '- Notes: ' + credNotes : ''}
-Assume you are logged in. Test authenticated features: dashboards, settings, user-specific data, gated functionality.` : '';
-
   const customDesc = personaKey === 'custom' && customPersonaText
-    ? \`You are a custom expert: \${customPersonaText}\`
-    : \`You are an expert \${persona.name} with deep knowledge of \${persona.expertise}.\`;
+    ? `You are a custom expert: ${customPersonaText}`
+    : `You are an expert ${persona.name} with deep knowledge of ${persona.expertise}.`;
 
   const systemPrompt = `You are PHANTOM, an agentic beta testing AI that simulates expert user behavior.
 ${customDesc}
 Your testing style: ${persona.style}
 You focus specifically on: ${persona.probes.join(', ')}.
 When testing, you think step-by-step as a real expert user would, noting confusion, friction, bugs, and delight.
-You report findings with complete intellectual honesty — both problems AND genuine strengths.
-${credBlock}`;
+You report findings with complete intellectual honesty — both problems AND genuine strengths.`;
 
   const userPrompt = `You are beta testing: "${appName}"
 Description: ${appDesc}
@@ -1341,22 +1277,6 @@ ${findingCards}
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// ── ESC key closes drawer ─────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const overlay = document.getElementById('drawerOverlay');
-    if (overlay.classList.contains('open')) {
-      toggleDrawer();
-    }
-  }
-});
-
-// ── Update aria-expanded on settings button ────────────────────
-function updateSettingsAria(open) {
-  const btn = document.getElementById('settingsToggleBtn');
-  if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-}
 
 // Init
 loadSettings();
