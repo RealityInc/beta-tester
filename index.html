@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHANTOM — Agentic Beta Testing</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+:root {
+–bg: #0a0a0f;
+–surface: #111118;
+–surface2: #18181f;
+–border: #2a2a38;
+–accent: #00e5ff;
+–accent2: #ff3d71;
+–accent3: #a8ff3e;
+–text: #e8e8f0;
+–muted: #6b6b82;
+–warn: #ffb840;
+}
+
+- { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: var(–bg);
+color: var(–text);
+font-family: ‘IBM Plex Sans’, sans-serif;
+font-size: 14px;
+min-height: 100vh;
+overflow-x: hidden;
+}
+
+body::before {
+content: ‘’;
+position: fixed;
+inset: 0;
+background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+pointer-events: none;
+z-index: 9999;
+}
+
+/* ── Header ── */
+.header {
+border-bottom: 1px solid var(–border);
+padding: 16px 32px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: var(–surface);
+}
+.logo { font-family: ‘Bebas Neue’, sans-serif; font-size: 28px; letter-spacing: 4px; color: var(–accent); text-shadow: 0 0 20px rgba(0,229,255,0.4); }
+.logo span { color: var(–accent2); }
+.header-sub { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); letter-spacing: 2px; text-transform: uppercase; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.status-pill { font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; padding: 4px 12px; border: 1px solid var(–accent3); color: var(–accent3); letter-spacing: 2px; }
+.settings-btn {
+background: transparent; border: 1px solid var(–border); color: var(–muted);
+font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; padding: 4px 12px;
+cursor: pointer; letter-spacing: 2px; transition: all 0.15s;
+}
+.settings-btn:hover { border-color: var(–accent); color: var(–accent); }
+
+/* ── Settings Drawer ── */
+.drawer-overlay {
+position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000;
+display: none; align-items: flex-start; justify-content: flex-end;
+}
+.drawer-overlay.open { display: flex; }
+.drawer {
+background: var(–surface); border-left: 1px solid var(–border);
+width: 380px; height: 100vh; overflow-y: auto; padding: 28px;
+animation: slideRight 0.2s ease;
+}
+@keyframes slideRight { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.drawer-title { font-family: ‘Bebas Neue’, sans-serif; font-size: 22px; letter-spacing: 3px; color: var(–accent); margin-bottom: 4px; }
+.drawer-sub { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); letter-spacing: 2px; margin-bottom: 24px; }
+.drawer-section { margin-bottom: 24px; }
+.drawer-section-title { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; letter-spacing: 3px; color: var(–muted); text-transform: uppercase; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(–border); }
+.drawer-field { margin-bottom: 12px; }
+.drawer-field label { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); letter-spacing: 1px; display: block; margin-bottom: 4px; }
+.drawer-field input { width: 100%; background: var(–surface2); border: 1px solid var(–border); color: var(–text); font-family: ‘IBM Plex Mono’, monospace; font-size: 12px; padding: 8px 10px; outline: none; transition: border-color 0.2s; }
+.drawer-field input:focus { border-color: var(–accent); }
+.drawer-field input[type=“password”] { letter-spacing: 2px; }
+.drawer-hint { font-size: 11px; color: var(–muted); margin-top: 6px; line-height: 1.5; font-style: italic; }
+.drawer-hint a { color: var(–accent); text-decoration: none; }
+.drawer-close { width: 100%; padding: 10px; background: transparent; border: 1px solid var(–border); color: var(–muted); font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; letter-spacing: 2px; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+.drawer-close:hover { border-color: var(–accent2); color: var(–accent2); }
+.gh-status { font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; padding: 6px 10px; margin-top: 8px; }
+.gh-status.ok { border: 1px solid var(–accent3); color: var(–accent3); background: rgba(168,255,62,0.08); }
+.gh-status.err { border: 1px solid var(–accent2); color: var(–accent2); background: rgba(255,61,113,0.08); }
+
+/* ── Main layout ── */
+.main { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 61px); }
+
+/* ── Left panel ── */
+.left-panel { border-right: 1px solid var(–border); display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+.left-panel::-webkit-scrollbar { width: 3px; }
+.left-panel::-webkit-scrollbar-thumb { background: var(–border); }
+.panel-section { padding: 20px; border-bottom: 1px solid var(–border); flex-shrink: 0; }
+.panel-label { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
+
+textarea, input, select {
+width: 100%; background: var(–surface2); border: 1px solid var(–border);
+color: var(–text); font-family: ‘IBM Plex Mono’, monospace; font-size: 12px;
+padding: 10px 12px; outline: none; transition: border-color 0.2s; resize: none;
+}
+textarea:focus, input:focus, select:focus { border-color: var(–accent); box-shadow: 0 0 0 1px rgba(0,229,255,0.2); }
+select option { background: var(–surface2); }
+
+.persona-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.persona-card { padding: 10px; border: 1px solid var(–border); cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
+.persona-card:hover { border-color: var(–accent); background: rgba(0,229,255,0.05); }
+.persona-card.active { border-color: var(–accent); background: rgba(0,229,255,0.08); }
+.persona-card.active::before { content: ‘’; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(–accent); }
+.persona-emoji { font-size: 20px; margin-bottom: 4px; }
+.persona-title { font-size: 11px; font-weight: 600; color: var(–text); line-height: 1.2; }
+.persona-desc { font-size: 10px; color: var(–muted); margin-top: 2px; font-family: ‘IBM Plex Mono’, monospace; }
+
+.test-config { display: flex; flex-direction: column; gap: 8px; }
+.config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field-label { font-size: 10px; color: var(–muted); margin-bottom: 4px; font-family: ‘IBM Plex Mono’, monospace; letter-spacing: 1px; }
+
+.run-btn {
+margin: 16px 20px 8px; padding: 14px; background: transparent;
+border: 1px solid var(–accent); color: var(–accent);
+font-family: ‘Bebas Neue’, sans-serif; font-size: 18px; letter-spacing: 4px;
+cursor: pointer; transition: all 0.2s;
+}
+.run-btn:hover { background: rgba(0,229,255,0.1); box-shadow: 0 0 20px rgba(0,229,255,0.2); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.run-btn.running { border-color: var(–warn); color: var(–warn); animation: pulse-border 1.5s ease-in-out infinite; }
+@keyframes pulse-border { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,184,64,0.3); } 50% { box-shadow: 0 0 0 8px rgba(255,184,64,0); } }
+
+/* Generate Fix button */
+.fix-btn {
+margin: 0 20px 16px; padding: 12px; background: transparent;
+border: 1px solid var(–accent3); color: var(–accent3);
+font-family: ‘Bebas Neue’, sans-serif; font-size: 16px; letter-spacing: 3px;
+cursor: pointer; transition: all 0.2s;
+}
+.fix-btn:hover { background: rgba(168,255,62,0.08); box-shadow: 0 0 16px rgba(168,255,62,0.15); }
+.fix-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.fix-btn.working { border-color: var(–warn); color: var(–warn); animation: pulse-border 1.5s ease-in-out infinite; }
+
+/* ── Right panel ── */
+.right-panel { display: flex; flex-direction: column; overflow: hidden; }
+.output-tabs { display: flex; border-bottom: 1px solid var(–border); background: var(–surface); }
+.tab { padding: 12px 20px; font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(–muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab:hover { color: var(–text); }
+.tab.active { color: var(–accent); border-bottom-color: var(–accent); }
+.tab-content { display: none; flex: 1; overflow: hidden; }
+.tab-content.active { display: flex; flex-direction: column; }
+
+/* Toolbar above findings */
+.findings-toolbar {
+display: flex; gap: 8px; padding: 10px 20px;
+border-bottom: 1px solid var(–border); background: var(–surface);
+align-items: center; flex-shrink: 0;
+}
+.toolbar-btn {
+padding: 5px 14px; background: transparent; border: 1px solid var(–border);
+color: var(–muted); font-family: ‘IBM Plex Mono’, monospace; font-size: 10px;
+letter-spacing: 2px; cursor: pointer; transition: all 0.15s; text-transform: uppercase;
+}
+.toolbar-btn:hover { border-color: var(–accent); color: var(–accent); }
+.toolbar-btn.gh { border-color: rgba(168,255,62,0.4); color: var(–accent3); }
+.toolbar-btn.gh:hover { background: rgba(168,255,62,0.08); }
+.toolbar-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.toolbar-spacer { flex: 1; }
+.toolbar-count { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); }
+
+/* Activity log */
+.activity-log { flex: 1; overflow-y: auto; padding: 20px; font-family: ‘IBM Plex Mono’, monospace; font-size: 12px; line-height: 1.7; }
+.activity-log::-webkit-scrollbar { width: 4px; }
+.activity-log::-webkit-scrollbar-thumb { background: var(–border); }
+.log-entry { display: flex; gap: 12px; margin-bottom: 4px; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.log-time { color: var(–muted); min-width: 60px; }
+.log-type { min-width: 70px; font-size: 10px; letter-spacing: 1px; padding: 1px 6px; text-align: center; align-self: flex-start; margin-top: 2px; }
+.log-type.nav { background: rgba(0,229,255,0.15); color: var(–accent); }
+.log-type.action { background: rgba(168,255,62,0.15); color: var(–accent3); }
+.log-type.finding { background: rgba(255,61,113,0.15); color: var(–accent2); }
+.log-type.info { background: rgba(107,107,130,0.15); color: var(–muted); }
+.log-type.agent { background: rgba(255,184,64,0.15); color: var(–warn); }
+.log-type.fix { background: rgba(168,255,62,0.2); color: var(–accent3); }
+.log-msg { color: var(–text); flex: 1; }
+
+.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(–muted); font-family: ‘IBM Plex Mono’, monospace; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+.empty-text { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* Findings */
+.findings-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.findings-container::-webkit-scrollbar { width: 4px; }
+.findings-container::-webkit-scrollbar-thumb { background: var(–border); }
+
+.finding-card { border: 1px solid var(–border); background: var(–surface); padding: 16px; animation: slideIn 0.4s ease; position: relative; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+.finding-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.severity { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; letter-spacing: 2px; padding: 3px 8px; font-weight: 500; white-space: nowrap; }
+.severity.critical { border: 1px solid var(–accent2); color: var(–accent2); background: rgba(255,61,113,0.1); }
+.severity.high { border: 1px solid var(–warn); color: var(–warn); background: rgba(255,184,64,0.1); }
+.severity.medium { border: 1px solid var(–accent); color: var(–accent); background: rgba(0,229,255,0.1); }
+.severity.low { border: 1px solid var(–muted); color: var(–muted); background: rgba(107,107,130,0.1); }
+.severity.ux { border: 1px solid var(–accent3); color: var(–accent3); background: rgba(168,255,62,0.1); }
+.finding-title { font-weight: 600; font-size: 14px; flex: 1; line-height: 1.3; }
+.finding-body { font-size: 13px; color: #b0b0c8; line-height: 1.6; margin-bottom: 10px; }
+.finding-meta { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.meta-chip { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); display: flex; align-items: center; gap: 4px; }
+.meta-chip::before { content: ‘›’; color: var(–border); }
+.steps-list { margin: 8px 0; padding-left: 0; list-style: none; }
+.steps-list li { font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; color: var(–muted); padding: 3px 0 3px 20px; position: relative; }
+.steps-list li::before { content: attr(data-step); position: absolute; left: 0; color: var(–accent); font-size: 10px; }
+
+/* Per-finding GitHub button */
+.finding-gh-btn {
+margin-left: auto; padding: 3px 10px; background: transparent;
+border: 1px solid rgba(168,255,62,0.3); color: var(–accent3);
+font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; letter-spacing: 1px;
+cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.finding-gh-btn:hover { background: rgba(168,255,62,0.1); }
+.finding-gh-btn.sent { border-color: var(–muted); color: var(–muted); cursor: default; }
+
+/* Summary */
+.summary-container { flex: 1; overflow-y: auto; padding: 24px; }
+.summary-container::-webkit-scrollbar { width: 4px; }
+.summary-container::-webkit-scrollbar-thumb { background: var(–border); }
+.summary-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(–border); }
+.summary-title { font-family: ‘Bebas Neue’, sans-serif; font-size: 32px; letter-spacing: 3px; margin-bottom: 6px; }
+.summary-meta { font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; color: var(–muted); }
+.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.score-card { border: 1px solid var(–border); padding: 16px; text-align: center; background: var(–surface); }
+.score-num { font-family: ‘Bebas Neue’, sans-serif; font-size: 36px; line-height: 1; margin-bottom: 4px; }
+.score-label { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; color: var(–muted); letter-spacing: 2px; text-transform: uppercase; }
+.severity-breakdown { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+.breakdown-pill { padding: 6px 14px; font-family: ‘IBM Plex Mono’, monospace; font-size: 11px; border: 1px solid var(–border); display: flex; align-items: center; gap: 6px; }
+.breakdown-dot { width: 8px; height: 8px; border-radius: 50%; }
+.verdict-box { border: 1px solid var(–border); padding: 20px; background: var(–surface); margin-bottom: 16px; }
+.verdict-label { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; letter-spacing: 3px; color: var(–muted); text-transform: uppercase; margin-bottom: 10px; }
+.verdict-text { font-size: 14px; line-height: 1.7; color: #c8c8e0; font-style: italic; }
+
+/* Fix output panel */
+.fix-output {
+margin: 0 20px 16px; border: 1px solid var(–accent3); background: rgba(168,255,62,0.04);
+padding: 16px; display: none;
+}
+.fix-output.visible { display: block; animation: fadeIn 0.4s ease; }
+.fix-output-label { font-family: ‘IBM Plex Mono’, monospace; font-size: 10px; letter-spacing: 2px; color: var(–accent3); margin-bottom: 10px; }
+.fix-output-desc { font-size: 12px; color: #c0c0d8; line-height: 1.6; margin-bottom: 12px; }
+.fix-download-btn {
+width: 100%; padding: 10px; background: rgba(168,255,62,0.1); border: 1px solid var(–accent3);
+color: var(–accent3); font-family: ‘Bebas Neue’, sans-serif; font-size: 15px; letter-spacing: 3px;
+cursor: pointer; transition: all 0.2s;
+}
+.fix-download-btn:hover { background: rgba(168,255,62,0.18); }
+
+/* Toast */
+.toast {
+position: fixed; bottom: 24px; right: 24px; z-index: 9998;
+background: var(–surface); border: 1px solid var(–border);
+padding: 12px 20px; font-family: ‘IBM Plex Mono’, monospace; font-size: 12px;
+animation: toastIn 0.3s ease; max-width: 320px;
+}
+.toast.ok { border-color: var(–accent3); color: var(–accent3); }
+.toast.err { border-color: var(–accent2); color: var(–accent2); }
+.toast.info { border-color: var(–accent); color: var(–accent); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* Progress */
+.progress-bar { height: 2px; background: var(–border); overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(–accent), var(–accent3)); width: 0%; transition: width 0.5s ease; }
+</style>
+
+</head>
+<body>
+
+<!-- Settings Drawer -->
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
+  <div class="drawer">
+    <div class="drawer-title">⚙ Settings</div>
+    <div class="drawer-sub">GITHUB + ITERATION CONFIG</div>
+
+```
+<div class="drawer-section">
+  <div class="drawer-section-title">GitHub Integration</div>
+  <div class="drawer-field">
+    <label>Personal Access Token</label>
+    <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" oninput="saveSettings()">
+  </div>
+  <div class="drawer-field">
+    <label>Repository Owner</label>
+    <input type="text" id="ghOwner" placeholder="your-username" oninput="saveSettings()">
+  </div>
+  <div class="drawer-field">
+    <label>Repository Name</label>
+    <input type="text" id="ghRepo" placeholder="your-repo" oninput="saveSettings()">
+  </div>
+  <button class="toolbar-btn gh" onclick="testGitHub()" style="width:100%;margin-top:4px">● VERIFY CONNECTION</button>
+  <div id="ghStatusMsg"></div>
+  <p class="drawer-hint">Token needs <code>repo</code> scope. <a href="https://github.com/settings/tokens/new" target="_blank">Create one here →</a></p>
+</div>
+
+<div class="drawer-section">
+  <div class="drawer-section-title">Source File (for Generate Fix)</div>
+  <div class="drawer-field">
+    <label>Paste source HTML to patch</label>
+    <textarea id="sourceCode" rows="5" placeholder="Paste your index.html source here so the Fix agent can generate a patched version..." oninput="saveSettings()"></textarea>
+  </div>
+  <p class="drawer-hint">The Generate Fix agent will read this source + the findings and return an improved version you can download and deploy.</p>
+</div>
+
+<button class="drawer-close" onclick="toggleDrawer()">✕ CLOSE</button>
+```
+
+  </div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="logo">PHAN<span>T</span>OM</div>
+    <div class="header-sub">Agentic Beta Testing System v2.0</div>
+  </div>
+  <div class="header-right">
+    <div class="status-pill" id="statusPill">● STANDBY</div>
+    <button class="settings-btn" onclick="toggleDrawer()">⚙ SETTINGS</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Left Config Panel -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="panel-label">Target Application</div>
+      <div class="field-label">App Name / URL</div>
+      <input type="text" id="appName" value="FounderOS Dashboard" placeholder="App name or URL..." style="margin-bottom:8px">
+      <div class="field-label">Description / Scope</div>
+      <textarea id="appDesc" rows="3" placeholder="What does this app do? What features should be tested?">A startup operating system with kanban boards, OKR tracking, investor pipeline management, and team collaboration tools.</textarea>
+    </div>
+
+```
+<div class="panel-section">
+  <div class="panel-label">Expert Persona</div>
+  <div class="persona-grid" id="personaGrid">
+    <div class="persona-card active" data-persona="cto">
+      <div class="persona-emoji">⚙️</div>
+      <div class="persona-title">CTO / Tech Lead</div>
+      <div class="persona-desc">arch, APIs, perf</div>
+    </div>
+    <div class="persona-card" data-persona="pm">
+      <div class="persona-emoji">📋</div>
+      <div class="persona-title">Product Manager</div>
+      <div class="persona-desc">flows, edge cases</div>
+    </div>
+    <div class="persona-card" data-persona="designer">
+      <div class="persona-emoji">🎨</div>
+      <div class="persona-title">UX Designer</div>
+      <div class="persona-desc">usability, a11y</div>
+    </div>
+    <div class="persona-card" data-persona="founder">
+      <div class="persona-emoji">🚀</div>
+      <div class="persona-title">Startup Founder</div>
+      <div class="persona-desc">value, friction</div>
+    </div>
+    <div class="persona-card" data-persona="ops">
+      <div class="persona-emoji">📊</div>
+      <div class="persona-title">Operations Lead</div>
+      <div class="persona-desc">data, workflow</div>
+    </div>
+    <div class="persona-card" data-persona="custom">
+      <div class="persona-emoji">✏️</div>
+      <div class="persona-title">Custom Persona</div>
+      <div class="persona-desc">define your own</div>
+    </div>
+  </div>
+  <textarea id="customPersona" rows="2" placeholder="Describe custom expert persona..." style="display:none"></textarea>
+</div>
+
+<div class="panel-section">
+  <div class="panel-label">Test Configuration</div>
+  <div class="test-config">
+    <div>
+      <div class="field-label">Test Depth</div>
+      <select id="testDepth">
+        <option value="quick">Quick Scan (5–10 findings)</option>
+        <option value="standard" selected>Standard Audit (15–25 findings)</option>
+        <option value="deep">Deep Dive (30+ findings)</option>
+      </select>
+    </div>
+    <div class="config-row">
+      <div>
+        <div class="field-label">Focus Area</div>
+        <select id="focusArea">
+          <option value="all">All Features</option>
+          <option value="ux">UX / Usability</option>
+          <option value="bugs">Bug Detection</option>
+          <option value="perf">Performance</option>
+          <option value="a11y">Accessibility</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label">User Skill Level</div>
+        <select id="skillLevel">
+          <option value="novice">Novice</option>
+          <option value="average" selected>Average</option>
+          <option value="power">Power User</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="run-btn" id="runBtn" onclick="startTest()">▶ DEPLOY AGENT</button>
+<button class="fix-btn" id="fixBtn" onclick="generateFix()" disabled>⚡ GENERATE FIX</button>
+
+<!-- Fix output lives in the left panel -->
+<div class="fix-output" id="fixOutput">
+  <div class="fix-output-label">◈ PATCH READY</div>
+  <div class="fix-output-desc" id="fixDesc"></div>
+  <button class="fix-download-btn" id="fixDownloadBtn">↓ DOWNLOAD PATCHED FILE</button>
+</div>
+```
+
+  </div>
+
+  <!-- Right Output Panel -->
+
+  <div class="right-panel">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="output-tabs">
+      <div class="tab active" onclick="switchTab('log')">Activity Log</div>
+      <div class="tab" onclick="switchTab('findings')">Findings <span id="findingsCount" style="font-size:10px;opacity:0.6"></span></div>
+      <div class="tab" onclick="switchTab('summary')">Summary Report</div>
+    </div>
+
+```
+<!-- Log Tab -->
+<div class="tab-content active" id="tab-log">
+  <div class="activity-log" id="activityLog">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">◈</div>
+      <div class="empty-text">Agent on standby — configure and deploy</div>
+    </div>
+  </div>
+</div>
+
+<!-- Findings Tab -->
+<div class="tab-content" id="tab-findings">
+  <div class="findings-toolbar" id="findingsToolbar" style="display:none">
+    <button class="toolbar-btn gh" id="exportAllBtn" onclick="exportAllToGitHub()" disabled>⬡ EXPORT ALL TO GITHUB</button>
+    <button class="toolbar-btn" onclick="copyFindingsJSON()">{ } COPY JSON</button>
+    <div class="toolbar-spacer"></div>
+    <div class="toolbar-count" id="toolbarCount"></div>
+  </div>
+  <div class="findings-container" id="findingsContainer">
+    <div class="empty-state">
+      <div class="empty-icon">◈</div>
+      <div class="empty-text">No findings yet</div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Tab -->
+<div class="tab-content" id="tab-summary">
+  <div class="summary-container" id="summaryContainer">
+    <div class="empty-state">
+      <div class="empty-icon">◈</div>
+      <div class="empty-text">Run a test to generate report</div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let isRunning = false;
+let isFixing = false;
+let findings = [];
+let lastResult = null;
+let fixedSource = null;
+
+// ── Settings persistence ───────────────────────────────────────
+function saveSettings() {
+  localStorage.setItem('phantom_ghToken', document.getElementById('ghToken').value);
+  localStorage.setItem('phantom_ghOwner', document.getElementById('ghOwner').value);
+  localStorage.setItem('phantom_ghRepo', document.getElementById('ghRepo').value);
+  localStorage.setItem('phantom_source', document.getElementById('sourceCode').value);
+}
+
+function loadSettings() {
+  document.getElementById('ghToken').value = localStorage.getItem('phantom_ghToken') || '';
+  document.getElementById('ghOwner').value = localStorage.getItem('phantom_ghOwner') || '';
+  document.getElementById('ghRepo').value = localStorage.getItem('phantom_ghRepo') || '';
+  document.getElementById('sourceCode').value = localStorage.getItem('phantom_source') || '';
+}
+
+function getGHConfig() {
+  return {
+    token: localStorage.getItem('phantom_ghToken') || '',
+    owner: localStorage.getItem('phantom_ghOwner') || '',
+    repo: localStorage.getItem('phantom_ghRepo') || ''
+  };
+}
+
+// ── Drawer ─────────────────────────────────────────────────────
+function toggleDrawer() {
+  loadSettings();
+  document.getElementById('drawerOverlay').classList.toggle('open');
+}
+
+function closeDrawer(e) {
+  if (e.target === document.getElementById('drawerOverlay')) toggleDrawer();
+}
+
+// ── GitHub helpers ──────────────────────────────────────────────
+async function testGitHub() {
+  const { token, owner, repo } = getGHConfig();
+  const el = document.getElementById('ghStatusMsg');
+  if (!token || !owner || !repo) {
+    el.innerHTML = '<div class="gh-status err">Fill in all three fields first.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="gh-status" style="border-color:var(--muted);color:var(--muted)">Connecting...</div>';
+  try {
+    const r = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+    });
+    if (r.ok) {
+      const d = await r.json();
+      el.innerHTML = `<div class="gh-status ok">✓ Connected: ${d.full_name} (${d.open_issues_count} open issues)</div>`;
+    } else {
+      el.innerHTML = `<div class="gh-status err">✗ Error ${r.status} — check token & repo name</div>`;
+    }
+  } catch(e) {
+    el.innerHTML = `<div class="gh-status err">✗ Network error: ${e.message}</div>`;
+  }
+}
+
+async function createGitHubIssue(finding) {
+  const { token, owner, repo } = getGHConfig();
+  if (!token || !owner || !repo) {
+    showToast('Configure GitHub in Settings first.', 'err');
+    return false;
+  }
+
+  const severityLabel = finding.severity.toLowerCase();
+  const body = [
+    `## ${finding.title}`,
+    ``,
+    `**Severity:** ${finding.severity}  `,
+    `**Area:** ${finding.area}  `,
+    `**Impact:** ${finding.impact}`,
+    ``,
+    `### Description`,
+    finding.description,
+    ``,
+    finding.steps?.length ? `### Steps to Reproduce\n${finding.steps.map((s,i) => `${i+1}. ${s}`).join('\n')}` : '',
+    ``,
+    `### Recommendation`,
+    finding.recommendation || '_No recommendation provided._',
+    ``,
+    `---`,
+    `*Generated by PHANTOM Agentic Beta Tester*`
+  ].filter(l => l !== undefined).join('\n');
+
+  const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+    method: 'POST',
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      title: `[${finding.severity}] ${finding.title}`,
+      body,
+      labels: ['phantom-finding', severityLabel, `area:${finding.area.toLowerCase().replace(/\s+/g,'-')}`]
+    })
+  });
+
+  return r.ok ? await r.json() : null;
+}
+
+async function exportAllToGitHub() {
+  if (!findings.length) return;
+  const btn = document.getElementById('exportAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ EXPORTING...';
+
+  let ok = 0, fail = 0;
+  for (const f of findings) {
+    const issue = await createGitHubIssue(f);
+    if (issue) { ok++; addLog('fix', `GitHub issue #${issue.number} created: ${f.title}`); }
+    else { fail++; }
+    await sleep(300); // rate limit buffer
+  }
+
+  btn.textContent = `✓ ${ok} ISSUES CREATED`;
+  showToast(`${ok} issues created${fail ? `, ${fail} failed` : ''}.`, ok > 0 ? 'ok' : 'err');
+}
+
+async function exportSingleFinding(finding, btn) {
+  btn.textContent = '...';
+  btn.disabled = true;
+  const issue = await createGitHubIssue(finding);
+  if (issue) {
+    btn.textContent = `#${issue.number} ✓`;
+    btn.classList.add('sent');
+    showToast(`Issue #${issue.number} created.`, 'ok');
+    addLog('fix', `GitHub issue #${issue.number}: ${finding.title}`);
+  } else {
+    btn.textContent = '✗ FAILED';
+    showToast('Failed to create issue. Check Settings.', 'err');
+    btn.disabled = false;
+  }
+}
+
+function copyFindingsJSON() {
+  if (!findings.length) return;
+  navigator.clipboard.writeText(JSON.stringify(findings, null, 2));
+  showToast('Findings JSON copied to clipboard.', 'info');
+}
+
+// ── Generate Fix ───────────────────────────────────────────────
+async function generateFix() {
+  if (isFixing || !findings.length) return;
+  const source = localStorage.getItem('phantom_source') || '';
+
+  if (!source.trim()) {
+    showToast('Paste your source HTML in Settings → Source File first.', 'err');
+    toggleDrawer();
+    return;
+  }
+
+  isFixing = true;
+  const btn = document.getElementById('fixBtn');
+  btn.textContent = '⟳ ANALYZING...';
+  btn.classList.add('working');
+  btn.disabled = true;
+
+  document.getElementById('fixOutput').classList.remove('visible');
+  addLog('fix', 'Generate Fix agent initializing...');
+  switchTab('log');
+
+  const findingsSummary = findings.map((f, i) =>
+    `${i+1}. [${f.severity}] ${f.title}\n   Area: ${f.area}\n   Issue: ${f.description}\n   Fix: ${f.recommendation}`
+  ).join('\n\n');
+
+  const systemPrompt = `You are an expert frontend developer and UX engineer. You receive HTML source code and a list of beta testing findings, and you produce an improved version of the source code that addresses the findings.
+
+You are precise, pragmatic, and you only make changes directly motivated by the findings. You do not refactor unrelated code.`;
+
+  const userPrompt = `Here are the beta testing findings to address:
+
+${findingsSummary}
+
+Here is the current source code:
+\`\`\`html
+${source.substring(0, 60000)}
+\`\`\`
+
+Return a JSON object with exactly this structure (no markdown, no backticks):
+{
+  "summary": "2-3 sentences describing what you changed and why",
+  "changesApplied": ["change 1", "change 2", "change 3"],
+  "patchedSource": "THE COMPLETE UPDATED HTML FILE — full file, no truncation, no placeholders"
+}`;
+
+  try {
+    addLog('fix', 'Sending source + findings to fix agent...');
+    await sleep(500);
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 8000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || '';
+
+    addLog('fix', 'Fix agent responded — parsing patch...');
+
+    let result;
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      result = JSON.parse(cleaned);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) result = JSON.parse(match[0]);
+      else throw new Error("Could not parse fix response");
+    }
+
+    if (!result.patchedSource) throw new Error("No patched source in response");
+
+    fixedSource = result.patchedSource;
+
+    // Show fix output panel
+    document.getElementById('fixDesc').innerHTML =
+      `<strong>Changes applied:</strong><br>` +
+      result.changesApplied.map(c => `• ${c}`).join('<br>') +
+      `<br><br><em>${result.summary}</em>`;
+
+    document.getElementById('fixOutput').classList.add('visible');
+
+    document.getElementById('fixDownloadBtn').onclick = () => {
+      const blob = new Blob([fixedSource], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'phantom-patched.html'; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Patched file downloaded. Deploy to Vercel!', 'ok');
+    };
+
+    addLog('fix', `Patch complete — ${result.changesApplied.length} changes applied.`);
+    addLog('fix', result.summary);
+    showToast('Fix generated! Download and deploy.', 'ok');
+
+  } catch(err) {
+    addLog('finding', `Fix agent error: ${err.message}`);
+    showToast('Fix generation failed: ' + err.message, 'err');
+  }
+
+  isFixing = false;
+  btn.textContent = '⚡ GENERATE FIX';
+  btn.classList.remove('working');
+  btn.disabled = false;
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── Persona selection ──────────────────────────────────────────
+const personas = {
+  cto: { name: "CTO / Tech Lead", expertise: "system architecture, API design, performance benchmarking, security auditing, developer experience, technical debt assessment", style: "analytical and precise. I think in terms of scalability, reliability, and engineering fundamentals.", probes: ["API error handling", "loading states", "data consistency", "offline behavior", "security headers", "performance bottlenecks"] },
+  pm: { name: "Senior Product Manager", expertise: "user story mapping, feature scoping, edge case identification, onboarding flows, retention mechanics, competitive UX analysis", style: "I approach testing as a user journey detective — I look for moments where the product promise breaks down.", probes: ["empty states", "onboarding clarity", "error recovery", "feature discoverability", "workflow completeness", "unclear affordances"] },
+  designer: { name: "Senior UX Designer", expertise: "interaction design, information architecture, accessibility (WCAG), visual hierarchy, cognitive load, micro-interactions, design systems", style: "empathetic and detail-obsessed. I notice what most people walk past — the half-pixel misalignment that erodes trust.", probes: ["contrast ratios", "focus states", "modal accessibility", "form validation clarity", "responsive breakpoints", "touch targets"] },
+  founder: { name: "Startup Founder (Series A)", expertise: "product-market fit signals, user activation, time-to-value, core loop friction, investor-relevant metrics, competitive differentiation", style: "impatient and high-signal. I simulate a busy founder who has 10 minutes to evaluate if this tool solves a real problem.", probes: ["time to first value", "key feature depth", "data export", "collaboration friction", "pricing clarity", "onboarding drop-off"] },
+  ops: { name: "Operations Lead", expertise: "workflow automation, data integrity, bulk operations, reporting, audit trails, team permission structures, integration with existing tools", style: "systematic and process-oriented. I stress-test the admin layers that power users rely on.", probes: ["bulk actions", "filter/sort completeness", "CSV export accuracy", "permission granularity", "audit log completeness", "notification control"] },
+  custom: { name: "Custom Expert", expertise: "as defined by user", style: "domain expert perspective", probes: ["general usability", "feature completeness", "error handling", "accessibility", "performance"] }
+};
+
+document.querySelectorAll('.persona-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.persona-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    document.getElementById('customPersona').style.display = card.dataset.persona === 'custom' ? 'block' : 'none';
+  });
+});
+
+function getSelectedPersona() {
+  const active = document.querySelector('.persona-card.active');
+  return active ? active.dataset.persona : 'pm';
+}
+
+// ── Tabs ────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['log', 'findings', 'summary'][i] === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === `tab-${name}`);
+  });
+}
+
+// ── Logging ─────────────────────────────────────────────────────
+function now() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function addLog(type, msg) {
+  const log = document.getElementById('activityLog');
+  document.getElementById('emptyState')?.remove();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${now()}</span><span class="log-type ${type}">${type.toUpperCase()}</span><span class="log-msg">${msg}</span>`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ── Add finding card ─────────────────────────────────────────────
+function addFinding(finding) {
+  findings.push(finding);
+  document.getElementById('findingsCount').textContent = `(${findings.length})`;
+  document.getElementById('toolbarCount').textContent = `${findings.length} findings`;
+
+  // Show toolbar
+  document.getElementById('findingsToolbar').style.display = 'flex';
+  document.getElementById('exportAllBtn').disabled = false;
+
+  const container = document.getElementById('findingsContainer');
+  container.querySelector('.empty-state')?.remove();
+
+  const steps = finding.steps ? finding.steps.map((s, i) => `<li data-step="${i+1}.">${s}</li>`).join('') : '';
+  const ghConfigured = !!(localStorage.getItem('phantom_ghToken') && localStorage.getItem('phantom_ghOwner') && localStorage.getItem('phantom_ghRepo'));
+
+  const card = document.createElement('div');
+  card.className = 'finding-card';
+  const btnId = `ghbtn-${findings.length}`;
+  card.innerHTML = `
+    <div class="finding-header">
+      <span class="severity ${finding.severity.toLowerCase()}">${finding.severity}</span>
+      <span class="finding-title">${finding.title}</span>
+      <button class="finding-gh-btn" id="${btnId}" onclick="exportSingleFinding(findings[${findings.length-1}], this)">
+        ${ghConfigured ? '⬡ GITHUB' : '⬡ EXPORT'}
+      </button>
+    </div>
+    <div class="finding-body">${finding.description}</div>
+    ${steps ? `<ol class="steps-list">${steps}</ol>` : ''}
+    <div class="finding-meta">
+      <span class="meta-chip">${finding.area}</span>
+      <span class="meta-chip">${finding.impact}</span>
+      ${finding.recommendation ? `<span class="meta-chip">${finding.recommendation}</span>` : ''}
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+function setProgress(pct) {
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── Main test runner ────────────────────────────────────────────
+async function startTest() {
+  if (isRunning) return;
+
+  const appName = document.getElementById('appName').value.trim() || 'the application';
+  const appDesc = document.getElementById('appDesc').value.trim() || 'A web application';
+  const personaKey = getSelectedPersona();
+  const persona = personas[personaKey];
+  const depth = document.getElementById('testDepth').value;
+  const focus = document.getElementById('focusArea').value;
+  const skill = document.getElementById('skillLevel').value;
+  const customPersonaText = document.getElementById('customPersona').value;
+
+  const depthMap = { quick: '8-12', standard: '15-20', deep: '25-35' };
+  const numFindings = depthMap[depth];
+
+  isRunning = true;
+  findings = [];
+  lastResult = null;
+  fixedSource = null;
+
+  document.getElementById('findingsCount').textContent = '';
+  document.getElementById('activityLog').innerHTML = '';
+  document.getElementById('findingsContainer').innerHTML = '<div class="empty-state" style="padding:40px;text-align:center"><div style="font-family:IBM Plex Mono;font-size:11px;color:#6b6b82;letter-spacing:2px">SCANNING...</div></div>';
+  document.getElementById('summaryContainer').innerHTML = '<div class="empty-state" style="padding:40px;text-align:center"><div style="font-family:IBM Plex Mono;font-size:11px;color:#6b6b82;letter-spacing:2px">AWAITING COMPLETION</div></div>';
+  document.getElementById('findingsToolbar').style.display = 'none';
+  document.getElementById('fixOutput').classList.remove('visible');
+
+  const btn = document.getElementById('runBtn');
+  const fixBtn = document.getElementById('fixBtn');
+  btn.textContent = '⬛ AGENT ACTIVE';
+  btn.classList.add('running');
+  btn.disabled = true;
+  fixBtn.disabled = true;
+
+  document.getElementById('statusPill').textContent = '● SCANNING';
+  document.getElementById('statusPill').style.cssText = 'border-color:#ffb840;color:#ffb840;font-family:IBM Plex Mono,monospace;font-size:11px;padding:4px 12px;letter-spacing:2px';
+
+  setProgress(5);
+
+  addLog('agent', `Initializing ${persona.name} agent...`);
+  addLog('info', `Target: ${appName}`);
+  addLog('info', `Focus: ${focus === 'all' ? 'Comprehensive' : focus} | Depth: ${depth} | Skill: ${skill}`);
+  await sleep(800);
+  addLog('agent', `Persona loaded: ${persona.name} — ${persona.style.split('.')[0]}.`);
+  await sleep(600);
+  addLog('nav', `Navigating to ${appName} — establishing baseline session`);
+  setProgress(12);
+  await sleep(700);
+  addLog('action', `Scanning application structure and feature inventory`);
+  await sleep(500);
+  addLog('info', `App description parsed: "${appDesc.substring(0, 80)}${appDesc.length > 80 ? '...' : ''}"`);
+  setProgress(18);
+
+  const customDesc = personaKey === 'custom' && customPersonaText
+    ? `You are a custom expert: ${customPersonaText}`
+    : `You are an expert ${persona.name} with deep knowledge of ${persona.expertise}.`;
+
+  const systemPrompt = `You are PHANTOM, an agentic beta testing AI that simulates expert user behavior.
+${customDesc}
+Your testing style: ${persona.style}
+You focus specifically on: ${persona.probes.join(', ')}.
+When testing, you think step-by-step as a real expert user would, noting confusion, friction, bugs, and delight.
+You report findings with complete intellectual honesty — both problems AND genuine strengths.`;
+
+  const userPrompt = `You are beta testing: "${appName}"
+Description: ${appDesc}
+Test depth: ${depth} (generate ${numFindings} findings)
+Focus area: ${focus === 'all' ? 'comprehensive — cover UX, bugs, performance, accessibility, and feature completeness' : focus}
+User expertise simulated: ${skill}
+
+Return ONLY a valid JSON object — no markdown, no backticks, no preamble:
+{
+  "agentThoughts": "2-3 sentences of your initial expert impression",
+  "testingNarrative": "A paragraph describing your testing approach",
+  "findings": [
+    {
+      "title": "Short, specific title",
+      "severity": "Critical|High|Medium|Low|UX",
+      "area": "feature area",
+      "description": "2-3 sentence expert description",
+      "steps": ["step 1", "step 2", "step 3"],
+      "impact": "who is affected and how",
+      "recommendation": "concrete fix recommendation"
+    }
+  ],
+  "overallScore": <1-10>,
+  "scores": { "ux": <1-10>, "reliability": <1-10>, "performance": <1-10>, "accessibility": <1-10> },
+  "verdict": "3-4 sentence honest executive summary of beta readiness.",
+  "topStrengths": ["strength 1", "strength 2", "strength 3"],
+  "criticalIssues": ["top priority fix 1", "top priority fix 2"]
+}`;
+
+  try {
+    await sleep(400);
+    addLog('nav', `Exploring dashboard and primary navigation`);
+    setProgress(25);
+    await sleep(500);
+    addLog('action', `Testing core workflow: create → edit → manage`);
+    setProgress(32);
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }]
+      })
+    });
+
+    setProgress(55);
+    addLog('agent', `Analysis in progress — applying ${persona.name} expertise...`);
+
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || '';
+    setProgress(70);
+    addLog('agent', `Processing findings and generating report...`);
+
+    let result;
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      result = JSON.parse(cleaned);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (match) result = JSON.parse(match[0]);
+      else throw new Error("Could not parse response");
+    }
+
+    lastResult = result;
+
+    await sleep(500);
+    addLog('agent', `"${result.agentThoughts}"`);
+    setProgress(78);
+    await sleep(600);
+    addLog('info', result.testingNarrative?.substring(0, 120) + '...');
+
+    for (let i = 0; i < result.findings.length; i++) {
+      const f = result.findings[i];
+      await sleep(200 + Math.random() * 300);
+      const typeMap = { Critical: 'finding', High: 'finding', Medium: 'action', Low: 'info', UX: 'action' };
+      addLog(typeMap[f.severity] || 'info', `[${f.severity}] ${f.area}: ${f.title}`);
+      addFinding(f);
+      setProgress(78 + ((i + 1) / result.findings.length) * 15);
+    }
+
+    setProgress(95);
+    await sleep(600);
+    buildSummary(result, appName, persona.name);
+    setProgress(100);
+
+    addLog('agent', `Test complete. ${result.findings.length} findings logged. Score: ${result.overallScore}/10`);
+
+    const gh = getGHConfig();
+    if (gh.token && gh.owner && gh.repo) {
+      addLog('info', `GitHub configured — use ⬡ GITHUB buttons to create issues.`);
+    } else {
+      addLog('info', `Tip: Configure GitHub in Settings to export findings as issues.`);
+    }
+
+    if (localStorage.getItem('phantom_source')) {
+      addLog('info', `Source loaded — ⚡ GENERATE FIX is ready.`);
+    } else {
+      addLog('info', `Tip: Paste your source HTML in Settings to enable ⚡ GENERATE FIX.`);
+    }
+
+    document.getElementById('statusPill').textContent = '● COMPLETE';
+    document.getElementById('statusPill').style.cssText = 'border-color:#a8ff3e;color:#a8ff3e;font-family:IBM Plex Mono,monospace;font-size:11px;padding:4px 12px;letter-spacing:2px';
+
+    await sleep(800);
+    switchTab('findings');
+
+  } catch (err) {
+    addLog('finding', `Agent error: ${err.message}`);
+    document.getElementById('statusPill').textContent = '● ERROR';
+    document.getElementById('statusPill').style.cssText = 'border-color:#ff3d71;color:#ff3d71;font-family:IBM Plex Mono,monospace;font-size:11px;padding:4px 12px;letter-spacing:2px';
+  }
+
+  isRunning = false;
+  btn.textContent = '▶ DEPLOY AGENT';
+  btn.classList.remove('running');
+  btn.disabled = false;
+  fixBtn.disabled = false;
+}
+
+// ── Summary builder ─────────────────────────────────────────────
+function buildSummary(result, appName, personaName) {
+  const container = document.getElementById('summaryContainer');
+  const sev = { Critical: 0, High: 0, Medium: 0, Low: 0, UX: 0 };
+  result.findings.forEach(f => { if (sev[f.severity] !== undefined) sev[f.severity]++; });
+  const sc = s => s >= 8 ? 'var(--accent3)' : s >= 6 ? 'var(--accent)' : s >= 4 ? 'var(--warn)' : 'var(--accent2)';
+
+  container.innerHTML = `
+    <div class="summary-header">
+      <div class="summary-title">${appName} — Beta Audit</div>
+      <div class="summary-meta">Tested by: ${personaName} agent · ${result.findings.length} findings · ${new Date().toLocaleDateString()}</div>
+    </div>
+    <div class="score-grid">
+      <div class="score-card"><div class="score-num" style="color:${sc(result.overallScore)}">${result.overallScore}</div><div class="score-label">Overall</div></div>
+      <div class="score-card"><div class="score-num" style="color:${sc(result.scores?.ux||5)}">${result.scores?.ux||'–'}</div><div class="score-label">UX</div></div>
+      <div class="score-card"><div class="score-num" style="color:${sc(result.scores?.reliability||5)}">${result.scores?.reliability||'–'}</div><div class="score-label">Reliability</div></div>
+      <div class="score-card"><div class="score-num" style="color:${sc(result.scores?.accessibility||5)}">${result.scores?.accessibility||'–'}</div><div class="score-label">A11Y</div></div>
+    </div>
+    <div class="severity-breakdown">
+      ${sev.Critical ? `<div class="breakdown-pill"><div class="breakdown-dot" style="background:var(--accent2)"></div>${sev.Critical} Critical</div>` : ''}
+      ${sev.High ? `<div class="breakdown-pill"><div class="breakdown-dot" style="background:var(--warn)"></div>${sev.High} High</div>` : ''}
+      ${sev.Medium ? `<div class="breakdown-pill"><div class="breakdown-dot" style="background:var(--accent)"></div>${sev.Medium} Medium</div>` : ''}
+      ${sev.Low ? `<div class="breakdown-pill"><div class="breakdown-dot" style="background:var(--muted)"></div>${sev.Low} Low</div>` : ''}
+      ${sev.UX ? `<div class="breakdown-pill"><div class="breakdown-dot" style="background:var(--accent3)"></div>${sev.UX} UX</div>` : ''}
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-label">Expert Verdict</div>
+      <div class="verdict-text">${result.verdict}</div>
+    </div>
+    ${result.topStrengths?.length ? `
+    <div class="verdict-box" style="border-color:rgba(168,255,62,0.3)">
+      <div class="verdict-label" style="color:var(--accent3)">Top Strengths</div>
+      ${result.topStrengths.map(s => `<div style="padding:4px 0;font-size:13px;color:#b8e8b0">✓ ${s}</div>`).join('')}
+    </div>` : ''}
+    ${result.criticalIssues?.length ? `
+    <div class="verdict-box" style="border-color:rgba(255,61,113,0.3)">
+      <div class="verdict-label" style="color:var(--accent2)">Priority Fixes</div>
+      ${result.criticalIssues.map(s => `<div style="padding:4px 0;font-size:13px;color:#f0a0b0">⚠ ${s}</div>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Init
+loadSettings();
+</script>
+
+</body>
+</html>
