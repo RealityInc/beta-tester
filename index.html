@@ -440,8 +440,10 @@
     <!-- Findings Tab -->
     <div class="tab-content" id="tab-findings">
       <div class="findings-toolbar" id="findingsToolbar" style="display:none">
-        <button class="toolbar-btn gh" id="exportAllBtn" onclick="exportAllToGitHub()" disabled>⬡ EXPORT ALL TO GITHUB</button>
-        <button class="toolbar-btn" onclick="copyFindingsJSON()">{ } COPY JSON</button>
+        <button class="toolbar-btn gh" id="exportAllBtn" onclick="exportAllToGitHub()" disabled>⬡ GITHUB</button>
+        <button class="toolbar-btn" onclick="copyFindingsMarkdown()" title="Copy as Markdown — paste into Notion, Slack, docs">↓ MARKDOWN</button>
+        <button class="toolbar-btn" onclick="downloadFindingsCSV()" title="Download as CSV — opens in Excel or Google Sheets">↓ CSV</button>
+        <button class="toolbar-btn" onclick="copyFindingsJSON()">{ } JSON</button>
         <div class="toolbar-spacer"></div>
         <div class="toolbar-count" id="toolbarCount"></div>
       </div>
@@ -455,6 +457,13 @@
 
     <!-- Summary Tab -->
     <div class="tab-content" id="tab-summary">
+      <div class="findings-toolbar" id="summaryToolbar" style="display:none">
+        <button class="toolbar-btn" onclick="downloadHTMLReport()" title="Save a standalone HTML file you can share with anyone">↓ EXPORT REPORT</button>
+        <button class="toolbar-btn" onclick="copyFindingsMarkdown()">↓ MARKDOWN</button>
+        <button class="toolbar-btn" onclick="downloadFindingsCSV()">↓ CSV</button>
+        <div class="toolbar-spacer"></div>
+        <div class="toolbar-count" id="summaryToolbarMeta"></div>
+      </div>
       <div class="summary-container" id="summaryContainer">
         <div class="empty-state">
           <div class="empty-icon">◈</div>
@@ -1014,6 +1023,11 @@ Return ONLY a valid JSON object — no markdown, no backticks, no preamble:
 
 // ── Summary builder ─────────────────────────────────────────────
 function buildSummary(result, appName, personaName) {
+  // Show summary export toolbar
+  const toolbar = document.getElementById('summaryToolbar');
+  toolbar.style.display = 'flex';
+  document.getElementById('summaryToolbarMeta').textContent = result.findings.length + ' findings · score ' + result.overallScore + '/10';
+
   const container = document.getElementById('summaryContainer');
   const sev = { Critical: 0, High: 0, Medium: 0, Low: 0, UX: 0 };
   result.findings.forEach(f => { if (sev[f.severity] !== undefined) sev[f.severity]++; });
@@ -1052,6 +1066,214 @@ function buildSummary(result, appName, personaName) {
       ${result.criticalIssues.map(s => `<div style="padding:4px 0;font-size:13px;color:#f0a0b0">⚠ ${s}</div>`).join('')}
     </div>` : ''}
   `;
+}
+
+// ── Export: Copy as Markdown ──────────────────────────────────
+function copyFindingsMarkdown() {
+  if (!findings.length || !lastResult) return;
+  const appName = document.getElementById('appName').value.trim() || 'App';
+  const date = new Date().toLocaleDateString();
+  const personaKey = getSelectedPersona();
+  const persona = personas[personaKey];
+
+  const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0, UX: 0 };
+  findings.forEach(f => { if (sevCounts[f.severity] !== undefined) sevCounts[f.severity]++; });
+
+  let md = [];
+  md.push(`# PHANTOM Beta Audit: ${appName}`);
+  md.push(`**Date:** ${date}  `);
+  md.push(`**Tested by:** ${persona.name} agent  `);
+  md.push(`**Overall Score:** ${lastResult.overallScore}/10  `);
+  md.push(`**Findings:** ${findings.length} total (${Object.entries(sevCounts).filter(([,v])=>v>0).map(([k,v])=>v+' '+k).join(', ')})`);
+  md.push('');
+  md.push('---');
+  md.push('');
+
+  if (lastResult.verdict) {
+    md.push('## Expert Verdict');
+    md.push(lastResult.verdict);
+    md.push('');
+  }
+
+  if (lastResult.scores) {
+    md.push('## Scores');
+    md.push(`| Category | Score |`);
+    md.push(`|---|---|`);
+    md.push(`| Overall | ${lastResult.overallScore}/10 |`);
+    md.push(`| UX | ${lastResult.scores.ux}/10 |`);
+    md.push(`| Reliability | ${lastResult.scores.reliability}/10 |`);
+    md.push(`| Accessibility | ${lastResult.scores.accessibility}/10 |`);
+    md.push('');
+  }
+
+  if (lastResult.topStrengths?.length) {
+    md.push('## Strengths');
+    lastResult.topStrengths.forEach(s => md.push(`- ✓ ${s}`));
+    md.push('');
+  }
+
+  if (lastResult.criticalIssues?.length) {
+    md.push('## Priority Fixes');
+    lastResult.criticalIssues.forEach(s => md.push(`- ⚠ ${s}`));
+    md.push('');
+  }
+
+  md.push('## Findings');
+  md.push('');
+
+  findings.forEach((f, i) => {
+    md.push(`### ${i+1}. [${f.severity}] ${f.title}`);
+    md.push(`**Area:** ${f.area}  `);
+    md.push(`**Impact:** ${f.impact}  `);
+    md.push('');
+    md.push(f.description);
+    if (f.steps?.length) {
+      md.push('');
+      md.push('**Steps to reproduce:**');
+      f.steps.forEach((s, si) => md.push(`${si+1}. ${s}`));
+    }
+    if (f.recommendation) {
+      md.push('');
+      md.push(`**Recommendation:** ${f.recommendation}`);
+    }
+    md.push('');
+    md.push('---');
+    md.push('');
+  });
+
+  md.push('*Generated by PHANTOM Agentic Beta Tester*');
+
+  navigator.clipboard.writeText(md.join('\n'));
+  showToast('Markdown copied — paste into Notion, Slack, or any doc.', 'ok');
+}
+
+// ── Export: Download CSV ──────────────────────────────────────
+function downloadFindingsCSV() {
+  if (!findings.length) return;
+  const appName = document.getElementById('appName').value.trim() || 'App';
+  const date = new Date().toLocaleDateString();
+
+  const headers = ['#', 'Severity', 'Title', 'Area', 'Description', 'Impact', 'Recommendation', 'Steps'];
+
+  const escape = v => {
+    const s = (v || '').toString().replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const rows = findings.map((f, i) => [
+    i + 1,
+    escape(f.severity),
+    escape(f.title),
+    escape(f.area),
+    escape(f.description),
+    escape(f.impact),
+    escape(f.recommendation),
+    escape((f.steps || []).join(' → '))
+  ].join(','));
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = appName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  a.href = url;
+  a.download = `phantom-audit-${safeName}-${date.replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded — open in Excel or Google Sheets.', 'ok');
+}
+
+// ── Export: Download HTML Report ─────────────────────────────
+function downloadHTMLReport() {
+  if (!findings.length || !lastResult) return;
+  const appName = document.getElementById('appName').value.trim() || 'App';
+  const date = new Date().toLocaleDateString();
+  const personaKey = getSelectedPersona();
+  const persona = personas[personaKey];
+
+  const sevColor = s => ({ Critical:'#ff3d71', High:'#ffb840', Medium:'#00e5ff', Low:'#6b6b82', UX:'#a8ff3e' }[s] || '#6b6b82');
+  const scoreColor = s => s >= 8 ? '#a8ff3e' : s >= 6 ? '#00e5ff' : s >= 4 ? '#ffb840' : '#ff3d71';
+
+  const findingCards = findings.map((f, i) => `
+    <div style="border:1px solid #2a2a38;background:#111118;padding:20px;margin-bottom:12px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;">
+        <span style="font-family:monospace;font-size:11px;padding:3px 8px;border:1px solid ${sevColor(f.severity)};color:${sevColor(f.severity)};background:${sevColor(f.severity)}18;white-space:nowrap;">${f.severity}</span>
+        <strong style="font-size:14px;flex:1;">${f.title}</strong>
+      </div>
+      <p style="color:#b0b0c8;font-size:13px;line-height:1.6;margin-bottom:10px;">${f.description}</p>
+      ${f.steps?.length ? `<div style="margin-bottom:8px;">${f.steps.map((s,si)=>`<div style="font-family:monospace;font-size:11px;color:#6b6b82;padding:2px 0 2px 20px;position:relative;"><span style="position:absolute;left:0;color:#00e5ff;">${si+1}.</span>${s}</div>`).join('')}</div>` : ''}
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:monospace;font-size:10px;color:#6b6b82;">
+        <span>› ${f.area}</span>
+        <span>› ${f.impact}</span>
+        ${f.recommendation ? `<span>› ${f.recommendation}</span>` : ''}
+      </div>
+    </div>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PHANTOM Audit — ${appName}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+  body { background:#0a0a0f; color:#e8e8f0; font-family:'IBM Plex Sans',sans-serif; font-size:14px; margin:0; padding:40px; max-width:900px; margin:0 auto; padding:40px 24px; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:4px; color:#00e5ff; text-shadow:0 0 20px rgba(0,229,255,0.3); margin:0 0 4px; }
+  h2 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:#e8e8f0; margin:32px 0 16px; border-bottom:1px solid #2a2a38; padding-bottom:8px; }
+  .meta { font-family:monospace; font-size:11px; color:#6b6b82; letter-spacing:1px; margin-bottom:32px; }
+  .scores { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  .score-card { border:1px solid #2a2a38; padding:16px; text-align:center; background:#111118; }
+  .score-num { font-family:'Bebas Neue',sans-serif; font-size:36px; line-height:1; margin-bottom:4px; }
+  .score-label { font-family:monospace; font-size:10px; color:#6b6b82; letter-spacing:2px; text-transform:uppercase; }
+  .verdict { border:1px solid #2a2a38; padding:20px; background:#111118; margin-bottom:16px; font-size:14px; color:#c8c8e0; font-style:italic; line-height:1.7; }
+  .strengths { border:1px solid rgba(168,255,62,0.3); padding:16px 20px; background:#111118; margin-bottom:16px; }
+  .fixes { border:1px solid rgba(255,61,113,0.3); padding:16px 20px; background:#111118; margin-bottom:16px; }
+  .label { font-family:monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; }
+  .pills { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+  .pill { padding:5px 12px; border:1px solid #2a2a38; font-family:monospace; font-size:11px; display:flex; align-items:center; gap:6px; }
+  .dot { width:8px; height:8px; border-radius:50%; }
+  footer { font-family:monospace; font-size:10px; color:#6b6b82; letter-spacing:2px; text-align:center; padding:32px 0 0; border-top:1px solid #2a2a38; margin-top:32px; }
+</style>
+</head>
+<body>
+<h1>${appName} — Beta Audit</h1>
+<div class="meta">TESTED BY ${persona.name.toUpperCase()} AGENT · ${findings.length} FINDINGS · ${date} · PHANTOM V2.0</div>
+
+<div class="scores">
+  <div class="score-card"><div class="score-num" style="color:${scoreColor(lastResult.overallScore)}">${lastResult.overallScore}</div><div class="score-label">Overall</div></div>
+  <div class="score-card"><div class="score-num" style="color:${scoreColor(lastResult.scores?.ux||5)}">${lastResult.scores?.ux||'–'}</div><div class="score-label">UX</div></div>
+  <div class="score-card"><div class="score-num" style="color:${scoreColor(lastResult.scores?.reliability||5)}">${lastResult.scores?.reliability||'–'}</div><div class="score-label">Reliability</div></div>
+  <div class="score-card"><div class="score-num" style="color:${scoreColor(lastResult.scores?.accessibility||5)}">${lastResult.scores?.accessibility||'–'}</div><div class="score-label">A11Y</div></div>
+</div>
+
+<div class="pills">
+  ${[['Critical','#ff3d71'],['High','#ffb840'],['Medium','#00e5ff'],['Low','#6b6b82'],['UX','#a8ff3e']].map(([sev,col]) => {
+    const count = findings.filter(f=>f.severity===sev).length;
+    return count ? `<div class="pill"><div class="dot" style="background:${col}"></div>${count} ${sev}</div>` : '';
+  }).join('')}
+</div>
+
+<div class="verdict">${lastResult.verdict || ''}</div>
+
+${lastResult.topStrengths?.length ? `<div class="strengths"><div class="label" style="color:#a8ff3e">Top Strengths</div>${lastResult.topStrengths.map(s=>`<div style="padding:4px 0;color:#b8e8b0">✓ ${s}</div>`).join('')}</div>` : ''}
+${lastResult.criticalIssues?.length ? `<div class="fixes"><div class="label" style="color:#ff3d71">Priority Fixes</div>${lastResult.criticalIssues.map(s=>`<div style="padding:4px 0;color:#f0a0b0">⚠ ${s}</div>`).join('')}</div>` : ''}
+
+<h2>Findings (${findings.length})</h2>
+${findingCards}
+
+<footer>GENERATED BY PHANTOM AGENTIC BETA TESTER</footer>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = appName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  a.href = url;
+  a.download = `phantom-report-${safeName}-${date.replace(/\//g,'-')}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Report downloaded — open in any browser or share the file.', 'ok');
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
