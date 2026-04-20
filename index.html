@@ -1163,6 +1163,29 @@
       return document.getElementById(id);
     }
 
+    function getErrorMessage(err) {
+      if (!err) return 'Unknown error';
+      if (typeof err === 'string') return err;
+      if (err instanceof Error) {
+        if (typeof err.message === 'string') return err.message;
+        try {
+          return JSON.stringify(err.message || err);
+        } catch {
+          return 'Unknown error';
+        }
+      }
+      if (typeof err === 'object') {
+        if (typeof err.error === 'string') return err.error;
+        if (typeof err.message === 'string') return err.message;
+        try {
+          return JSON.stringify(err);
+        } catch {
+          return 'Unknown error';
+        }
+      }
+      return String(err);
+    }
+
     function saveSettings() {
       const valueIds = [
         'ghToken', 'ghOwner', 'ghRepo', 'ghBase', 'ghFilePath',
@@ -1371,10 +1394,6 @@
       el.textContent = text;
       el.style.borderColor = color;
       el.style.color = color;
-    }
-
-    function sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     function extractRawModelText(data) {
@@ -1668,7 +1687,8 @@ Return JSON:
         console.log('Proxy response:', data);
 
         if (!response.ok) {
-          throw new Error(data.error || data.message || `Proxy error ${response.status}`);
+          const proxyMsg = getErrorMessage(data);
+          throw new Error(proxyMsg || `Proxy error ${response.status}`);
         }
 
         const raw = extractRawModelText(data);
@@ -1708,9 +1728,11 @@ Return JSON:
         addLog('fix', `Test complete. ${findings.length} findings generated.`);
         document.querySelector('[data-tab="findings"]').click();
       } catch (err) {
-        addLog('finding', `Agent error: ${err.message}`);
+        const msg = getErrorMessage(err);
+        console.error('startTest error:', err);
+        addLog('finding', `Agent error: ${msg}`);
         setStatus('● ERROR', '#ff3d71');
-        showToast(err.message, 'err');
+        showToast(msg, 'err');
       } finally {
         isRunning = false;
         qs('runBtn').disabled = false;
@@ -1784,7 +1806,8 @@ Return:
         console.log('Fix proxy response:', data);
 
         if (!response.ok) {
-          throw new Error(data.error || data.message || `Proxy error ${response.status}`);
+          const proxyMsg = getErrorMessage(data);
+          throw new Error(proxyMsg || `Proxy error ${response.status}`);
         }
 
         const raw = extractRawModelText(data);
@@ -1806,8 +1829,10 @@ Return:
         qs('autoFixBtn').disabled = false;
         setStatus('● READY', '#a8ff3e');
       } catch (err) {
-        addLog('finding', `Fix error: ${err.message}`);
-        showToast(err.message, 'err');
+        const msg = getErrorMessage(err);
+        console.error('generateFix error:', err);
+        addLog('finding', `Fix error: ${msg}`);
+        showToast(msg, 'err');
         setStatus('● ERROR', '#ff3d71');
       } finally {
         isFixing = false;
@@ -1838,7 +1863,7 @@ Return:
         const data = await r.json();
         status.innerHTML = `<div class="status-box ok">Connected to ${data.full_name}</div>`;
       } catch (err) {
-        status.innerHTML = `<div class="status-box err">${err.message}</div>`;
+        status.innerHTML = `<div class="status-box err">${getErrorMessage(err)}</div>`;
       }
     }
 
@@ -1869,7 +1894,7 @@ Return:
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Could not create branch');
+        throw new Error(getErrorMessage(err) || 'Could not create branch');
       }
     }
 
@@ -1908,7 +1933,7 @@ Return:
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Could not update file');
+        throw new Error(getErrorMessage(err) || 'Could not update file');
       }
 
       return res.json();
@@ -1927,7 +1952,7 @@ Return:
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Could not create PR');
+        throw new Error(getErrorMessage(err) || 'Could not create PR');
       }
 
       return res.json();
@@ -1995,9 +2020,11 @@ Return:
         showToast(`PR created: #${pr.number}`, 'ok');
         window.open(pr.html_url, '_blank');
       } catch (err) {
-        addLog('finding', `GitHub auto-fix failed: ${err.message}`);
+        const msg = getErrorMessage(err);
+        console.error('autoFixPR error:', err);
+        addLog('finding', `GitHub auto-fix failed: ${msg}`);
         setStatus('● ERROR', '#ff3d71');
-        showToast(err.message, 'err');
+        showToast(msg, 'err');
       }
     }
 
