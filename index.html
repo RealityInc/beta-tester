@@ -1031,36 +1031,38 @@
               </select>
             </div>
 
-            <div class="config-row">
-              <div>
-                <div class="field-label">Mobile Preset</div>
-                <select id="mobilePreset" oninput="saveSettings(); updateDeviceFields();">
-                  <option value="iphone14">iPhone 14 / 15</option>
-                  <option value="iphoneSE">iPhone SE</option>
-                  <option value="pixel7">Pixel 7</option>
-                  <option value="galaxyS22">Galaxy S22</option>
-                  <option value="custom">Custom</option>
-                </select>
+            <div id="mobileDeviceFields">
+              <div class="config-row">
+                <div>
+                  <div class="field-label">Mobile Preset</div>
+                  <select id="mobilePreset" oninput="saveSettings(); updateDeviceFields();">
+                    <option value="iphone14">iPhone 14 / 15</option>
+                    <option value="iphoneSE">iPhone SE</option>
+                    <option value="pixel7">Pixel 7</option>
+                    <option value="galaxyS22">Galaxy S22</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div class="field-label">Orientation</div>
+                  <select id="deviceOrientation" oninput="saveSettings()">
+                    <option value="portrait" selected>Portrait</option>
+                    <option value="landscape">Landscape</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <div class="field-label">Orientation</div>
-                <select id="deviceOrientation" oninput="saveSettings()">
-                  <option value="portrait" selected>Portrait</option>
-                  <option value="landscape">Landscape</option>
-                </select>
-              </div>
-            </div>
+              <div class="config-row hidden" id="deviceCustomRow">
+                <div>
+                  <div class="field-label">Custom Width</div>
+                  <input id="customWidth" type="number" placeholder="390" oninput="saveSettings()" />
+                </div>
 
-            <div class="config-row device-custom hidden" id="deviceCustomRow">
-              <div>
-                <div class="field-label">Custom Width</div>
-                <input id="customWidth" type="number" placeholder="390" oninput="saveSettings()" />
-              </div>
-
-              <div>
-                <div class="field-label">Custom Height</div>
-                <input id="customHeight" type="number" placeholder="844" oninput="saveSettings()" />
+                <div>
+                  <div class="field-label">Custom Height</div>
+                  <input id="customHeight" type="number" placeholder="844" oninput="saveSettings()" />
+                </div>
               </div>
             </div>
 
@@ -1285,8 +1287,10 @@
     function updateDeviceFields() {
       const mode = qs('deviceMode').value;
       const preset = qs('mobilePreset').value;
-      const showCustom = (mode === 'mobile' || mode === 'all') && preset === 'custom';
-      qs('deviceCustomRow').classList.toggle('hidden', !showCustom);
+      const mobileRelevant = mode === 'mobile' || mode === 'all';
+
+      qs('mobileDeviceFields').classList.toggle('hidden', !mobileRelevant);
+      qs('deviceCustomRow').classList.toggle('hidden', !(mobileRelevant && preset === 'custom'));
     }
 
     function toggleDrawer() {
@@ -1373,6 +1377,30 @@
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
+    function extractRawModelText(data) {
+      return (
+        data.content?.find?.((c) => c.type === 'text')?.text ||
+        data.content?.[0]?.text ||
+        data.text ||
+        data.completion ||
+        data.output_text ||
+        ''
+      );
+    }
+
+    function parseJsonFromRaw(raw, errorMessage) {
+      try {
+        return JSON.parse(raw.replace(/```json|```/g, '').trim());
+      } catch {
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) {
+          console.error('Raw model response:', raw);
+          throw new Error(errorMessage);
+        }
+        return JSON.parse(match[0]);
+      }
+    }
+
     function addFindingCard(finding) {
       const container = qs('findingsContainer');
       container.querySelector('.empty-state')?.remove();
@@ -1383,14 +1411,14 @@
       const steps = (finding.steps || []).map((s) => `<li>${s}</li>`).join('');
       card.innerHTML = `
         <div class="finding-header">
-          <div class="severity ${finding.severity.toLowerCase()}">${finding.severity}</div>
-          <div class="finding-title">${finding.title}</div>
+          <div class="severity ${String(finding.severity || 'low').toLowerCase()}">${finding.severity || 'Low'}</div>
+          <div class="finding-title">${finding.title || 'Untitled finding'}</div>
         </div>
-        <div class="finding-body">${finding.description}</div>
+        <div class="finding-body">${finding.description || ''}</div>
         ${steps ? `<ul class="steps-list">${steps}</ul>` : ''}
         <div class="meta-row">
-          <div>AREA: ${finding.area}</div>
-          <div>IMPACT: ${finding.impact}</div>
+          <div>AREA: ${finding.area || 'General'}</div>
+          <div>IMPACT: ${finding.impact || 'Not specified'}</div>
           ${finding.recommendation ? `<div>FIX: ${finding.recommendation}</div>` : ''}
           ${finding.device ? `<div>DEVICE: ${finding.device}</div>` : ''}
         </div>
@@ -1400,12 +1428,17 @@
 
     function buildSummary(result, appName, personaName) {
       const sevCounts = { Critical: 0, High: 0, Medium: 0, Low: 0, UX: 0 };
-      result.findings.forEach((f) => {
+      (result.findings || []).forEach((f) => {
         if (sevCounts[f.severity] !== undefined) sevCounts[f.severity]++;
       });
 
+      const ux = result.scores?.ux ?? 5;
+      const reliability = result.scores?.reliability ?? 5;
+      const accessibility = result.scores?.accessibility ?? 5;
+      const overall = result.overallScore ?? 5;
+
       const scoreColor = (v) => (v >= 8 ? 'var(--accent3)' : v >= 6 ? 'var(--accent)' : v >= 4 ? 'var(--warn)' : 'var(--accent2)');
-      qs('summaryMeta').textContent = `${result.findings.length} findings · score ${result.overallScore}/10`;
+      qs('summaryMeta').textContent = `${(result.findings || []).length} findings · score ${overall}/10`;
 
       qs('summaryContainer').innerHTML = `
         <div class="summary-box">
@@ -1413,10 +1446,10 @@
           <div class="summary-sub">Tested by ${personaName} · ${new Date().toLocaleDateString()}</div>
 
           <div class="score-grid">
-            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.overallScore)}">${result.overallScore}</div><div class="score-label">Overall</div></div>
-            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.ux)}">${result.scores.ux}</div><div class="score-label">UX</div></div>
-            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.reliability)}">${result.scores.reliability}</div><div class="score-label">Reliability</div></div>
-            <div class="score-card"><div class="score-num" style="color:${scoreColor(result.scores.accessibility)}">${result.scores.accessibility}</div><div class="score-label">A11Y</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(overall)}">${overall}</div><div class="score-label">Overall</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(ux)}">${ux}</div><div class="score-label">UX</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(reliability)}">${reliability}</div><div class="score-label">Reliability</div></div>
+            <div class="score-card"><div class="score-num" style="color:${scoreColor(accessibility)}">${accessibility}</div><div class="score-label">A11Y</div></div>
           </div>
 
           <div class="pill-row">
@@ -1425,7 +1458,7 @@
 
           <div class="summary-box" style="margin-bottom:12px;">
             <div class="panel-label" style="margin-bottom:10px;">Expert Verdict</div>
-            <div style="line-height:1.8; color:#ced6f2;">${result.verdict}</div>
+            <div style="line-height:1.8; color:#ced6f2;">${result.verdict || 'No verdict returned.'}</div>
           </div>
 
           ${result.topStrengths?.length ? `
@@ -1467,11 +1500,11 @@
         `# PHANTOM Beta Audit: ${appName}`,
         ``,
         `**Persona:** ${persona}`,
-        `**Score:** ${lastResult.overallScore}/10`,
+        `**Score:** ${lastResult.overallScore || 5}/10`,
         `**Findings:** ${findings.length}`,
         ``,
         `## Verdict`,
-        lastResult.verdict,
+        lastResult.verdict || '',
         ``,
         `## Findings`,
         ...findings.flatMap((f, i) => [
@@ -1527,7 +1560,7 @@
       addLog('agent', `Initializing ${persona.name} agent...`);
       addLog('info', `Target: ${appName}`);
       addLog('info', `Focus: ${focus} | Depth: ${depth} | Skill: ${skill}`);
-      addLog('nav', `Device mode: ${device.mode} / preset: ${device.preset}`);
+      addLog('nav', `Device mode: ${device.mode}${device.mode !== 'desktop' ? ` / preset: ${device.preset}` : ''}`);
 
       if (auth.type !== 'none') {
         addLog('info', `Authentication mode: ${auth.type}`);
@@ -1621,27 +1654,33 @@ Return JSON:
             max_tokens: 5000,
             system: systemPrompt,
             messages: [{ role: 'user', content: userPrompt }],
-            metadata: {
-              auth,
-              device
-            }
+            metadata: { auth, device }
           })
         });
+
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error('Proxy did not return valid JSON');
+        }
+
+        console.log('Proxy response:', data);
+
+        if (!response.ok) {
+          throw new Error(data.error || data.message || `Proxy error ${response.status}`);
+        }
+
+        const raw = extractRawModelText(data);
+
+        if (!raw.trim()) {
+          throw new Error('Empty model response from /api/proxy');
+        }
 
         setProgress(58);
         addLog('agent', 'Processing model response...');
 
-        const data = await response.json();
-        const raw = data.content?.[0]?.text || '';
-
-        let result;
-        try {
-          result = JSON.parse(raw.replace(/```json|```/g, '').trim());
-        } catch {
-          const match = raw.match(/\{[\s\S]*\}/);
-          if (!match) throw new Error('Could not parse response');
-          result = JSON.parse(match[0]);
-        }
+        const result = parseJsonFromRaw(raw, 'Could not parse response');
 
         lastResult = result;
         addLog('agent', result.agentThoughts || 'Initial analysis complete.');
@@ -1735,17 +1774,26 @@ Return:
           })
         });
 
-        const data = await response.json();
-        const raw = data.content?.[0]?.text || '';
-
-        let result;
+        let data;
         try {
-          result = JSON.parse(raw.replace(/```json|```/g, '').trim());
+          data = await response.json();
         } catch {
-          const match = raw.match(/\{[\s\S]*\}/);
-          if (!match) throw new Error('Could not parse fix response');
-          result = JSON.parse(match[0]);
+          throw new Error('Proxy did not return valid JSON');
         }
+
+        console.log('Fix proxy response:', data);
+
+        if (!response.ok) {
+          throw new Error(data.error || data.message || `Proxy error ${response.status}`);
+        }
+
+        const raw = extractRawModelText(data);
+
+        if (!raw.trim()) {
+          throw new Error('Empty fix response from /api/proxy');
+        }
+
+        const result = parseJsonFromRaw(raw, 'Could not parse fix response');
 
         if (!result.patchedSource) throw new Error('No patched source returned');
 
@@ -1753,7 +1801,7 @@ Return:
         localStorage.setItem('phantom_sourceCode', fixedSource);
         qs('sourceCode').value = fixedSource;
 
-        addLog('fix', `Patch generated: ${result.summary}`);
+        addLog('fix', `Patch generated: ${result.summary || 'Updated source ready.'}`);
         showToast('Fix generated successfully.', 'ok');
         qs('autoFixBtn').disabled = false;
         setStatus('● READY', '#a8ff3e');
