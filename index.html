@@ -805,7 +805,29 @@
     <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer(event)">
       <aside class="drawer" onclick="event.stopPropagation()">
         <div class="drawer-title">⚙ SETTINGS</div>
-        <div class="drawer-sub">GitHub + Auth + Device Testing</div>
+        <div class="drawer-sub">Together.ai + GitHub + Device Testing</div>
+
+        <div class="drawer-section">
+          <div class="drawer-section-title">Together.ai API</div>
+
+          <div class="drawer-field">
+            <label for="togetherKey">Together.ai API Key</label>
+            <input id="togetherKey" type="password" placeholder="tgp_v1_xxxxx" oninput="saveSettings()" />
+          </div>
+
+          <div class="drawer-field">
+            <label for="togetherModel">Model</label>
+            <select id="togetherModel" oninput="saveSettings()">
+              <option value="Qwen/Qwen2.5-Coder-32B-Instruct">Qwen 2.5 Coder 32B (Recommended)</option>
+              <option value="Qwen/Qwen2.5-72B-Instruct-Turbo">Qwen 2.5 72B Turbo</option>
+              <option value="Qwen/Qwen2.5-7B-Instruct-Turbo">Qwen 2.5 7B Turbo</option>
+              <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo">Llama 3.3 70B</option>
+            </select>
+          </div>
+
+          <button class="ghost-btn" onclick="testTogether()">VERIFY TOGETHER.AI</button>
+          <div id="togetherStatus"></div>
+        </div>
 
         <div class="drawer-section">
           <div class="drawer-section-title">GitHub Repo</div>
@@ -1188,6 +1210,7 @@
 
     function saveSettings() {
       const valueIds = [
+        'togetherKey', 'togetherModel',
         'ghToken', 'ghOwner', 'ghRepo', 'ghBase', 'ghFilePath',
         'authType', 'authAppUrl', 'authStartRoute', 'authEmail', 'authPassword',
         'authGoogleMode', 'authGoogle2FA', 'authSuccessSignal', 'authNotes',
@@ -1210,6 +1233,7 @@
 
     function loadSettings() {
       const defaults = {
+        togetherModel: 'Qwen/Qwen2.5-Coder-32B-Instruct',
         ghBase: 'main',
         ghFilePath: 'index.html',
         authType: 'none',
@@ -1219,6 +1243,7 @@
       };
 
       const valueIds = [
+        'togetherKey', 'togetherModel',
         'ghToken', 'ghOwner', 'ghRepo', 'ghBase', 'ghFilePath',
         'authType', 'authAppUrl', 'authStartRoute', 'authEmail', 'authPassword',
         'authGoogleMode', 'authGoogle2FA', 'authSuccessSignal', 'authNotes',
@@ -1243,6 +1268,13 @@
 
       updateAuthFields();
       updateDeviceFields();
+    }
+
+    function getTogetherConfig() {
+      return {
+        key: localStorage.getItem('phantom_togetherKey') || '',
+        model: localStorage.getItem('phantom_togetherModel') || 'Qwen/Qwen2.5-Coder-32B-Instruct'
+      };
     }
 
     function getGHConfig() {
@@ -1396,17 +1428,6 @@
       el.style.color = color;
     }
 
-    function extractRawModelText(data) {
-      return (
-        data.content?.find?.((c) => c.type === 'text')?.text ||
-        data.content?.[0]?.text ||
-        data.text ||
-        data.completion ||
-        data.output_text ||
-        ''
-      );
-    }
-
     function parseJsonFromRaw(raw, errorMessage) {
       try {
         return JSON.parse(raw.replace(/```json|```/g, '').trim());
@@ -1543,8 +1564,89 @@
       showToast('Markdown copied.', 'ok');
     }
 
+    async function testTogether() {
+      const { key, model } = getTogetherConfig();
+      const status = qs('togetherStatus');
+
+      if (!key) {
+        status.innerHTML = `<div class="status-box err">Enter your Together.ai API key.</div>`;
+        return;
+      }
+
+      status.innerHTML = `<div class="status-box">Testing connection...</div>`;
+
+      try {
+        const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: 'user', content: 'Say "PHANTOM connected" exactly.' }],
+            max_tokens: 20,
+            temperature: 0
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        status.innerHTML = `<div class="status-box ok">✓ Connected! Model: ${model}</div>`;
+      } catch (err) {
+        status.innerHTML = `<div class="status-box err">${getErrorMessage(err)}</div>`;
+      }
+    }
+
+    async function callTogetherAI(systemPrompt, userPrompt, maxTokens = 5000) {
+      const { key, model } = getTogetherConfig();
+
+      if (!key) {
+        throw new Error('Together.ai API key not configured. Add it in Settings.');
+      }
+
+      const messages = [];
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+      messages.push({ role: 'user', content: userPrompt });
+
+      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          max_tokens: maxTokens,
+          temperature: 0.3
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Together.ai error ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
     async function startTest() {
       if (isRunning) return;
+
+      const togetherConfig = getTogetherConfig();
+      if (!togetherConfig.key) {
+        showToast('Configure Together.ai API key in Settings first.', 'err');
+        toggleDrawer();
+        return;
+      }
 
       const appName = qs('appName').value.trim() || 'the application';
       const appDesc = qs('appDesc').value.trim() || 'A web application';
@@ -1580,6 +1682,7 @@
       addLog('info', `Target: ${appName}`);
       addLog('info', `Focus: ${focus} | Depth: ${depth} | Skill: ${skill}`);
       addLog('nav', `Device mode: ${device.mode}${device.mode !== 'desktop' ? ` / preset: ${device.preset}` : ''}`);
+      addLog('info', `Model: ${togetherConfig.model}`);
 
       if (auth.type !== 'none') {
         addLog('info', `Authentication mode: ${auth.type}`);
@@ -1665,35 +1768,13 @@ Return JSON:
 }`;
 
       try {
-        const response = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 5000,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }]
-          })
-        });
-
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error('Proxy did not return valid JSON');
-        }
-
-        console.log('Proxy response:', data);
-
-        if (!response.ok) {
-          const proxyMsg = getErrorMessage(data);
-          throw new Error(proxyMsg || `Proxy error ${response.status}`);
-        }
-
-        const raw = extractRawModelText(data);
+        setProgress(25);
+        addLog('agent', 'Sending to Together.ai Qwen...');
+        
+        const raw = await callTogetherAI(systemPrompt, userPrompt, 5000);
 
         if (!raw.trim()) {
-          throw new Error('Empty model response from /api/proxy');
+          throw new Error('Empty response from Together.ai');
         }
 
         setProgress(58);
@@ -1741,6 +1822,13 @@ Return JSON:
     async function generateFix() {
       if (isFixing || !findings.length) return;
 
+      const togetherConfig = getTogetherConfig();
+      if (!togetherConfig.key) {
+        showToast('Configure Together.ai API key in Settings first.', 'err');
+        toggleDrawer();
+        return;
+      }
+
       const source = localStorage.getItem('phantom_sourceCode') || '';
       const auth = getAuthConfig();
       const device = getDeviceConfig();
@@ -1784,35 +1872,11 @@ Return:
 }`;
 
       try {
-        const response = await fetch('/api/proxy', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 8000,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }]
-          })
-        });
-
-        let data;
-        try {
-          data = await response.json();
-        } catch {
-          throw new Error('Proxy did not return valid JSON');
-        }
-
-        console.log('Fix proxy response:', data);
-
-        if (!response.ok) {
-          const proxyMsg = getErrorMessage(data);
-          throw new Error(proxyMsg || `Proxy error ${response.status}`);
-        }
-
-        const raw = extractRawModelText(data);
+        addLog('fix', 'Requesting fix from Together.ai...');
+        const raw = await callTogetherAI(systemPrompt, userPrompt, 8000);
 
         if (!raw.trim()) {
-          throw new Error('Empty fix response from /api/proxy');
+          throw new Error('Empty fix response from Together.ai');
         }
 
         const result = parseJsonFromRaw(raw, 'Could not parse fix response');
@@ -1983,7 +2047,7 @@ Return:
         const prBody = [
           `## PHANTOM Auto-Fix`,
           ``,
-          `This PR was generated from PHANTOM beta test findings.`,
+          `This PR was generated from PHANTOM beta test findings using Together.ai Qwen.`,
           ``,
           `### Auth Context`,
           `- Type: ${auth.type}`,
